@@ -11,6 +11,9 @@ enum AddressKind {
 }
 
 /// Standard error codes returned when address parsing fails.
+///
+/// String constants mirroring `AddressErrorCode` (exceptions.dart); keep the
+/// two in sync with the `errorCode` definition in `spec/schema.json`.
 abstract final class ErrorCode {
   /// The CRC-16 checksum of the address is invalid.
   static const invalidChecksum = 'INVALID_CHECKSUM';

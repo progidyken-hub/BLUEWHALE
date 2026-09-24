@@ -93,4 +93,4 @@ export type ParseResult =
       };
     };
 
-export { ErrorCode } from "./errors";
+export type { ErrorCode, AddressParseErrorCode } from "./errors";

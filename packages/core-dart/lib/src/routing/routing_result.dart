@@ -5,6 +5,7 @@
 library;
 
 import '../address/codes.dart' show Normalization;
+import '../exceptions.dart' show AddressErrorCode;
 import 'safe_routing_id.dart';
 
 /// Identifies the mechanism used to resolve a routing ID.
@@ -103,6 +104,10 @@ class DestinationError {
   final String message;
 
   DestinationError({required this.code, required this.message});
+
+  /// The typed [AddressErrorCode] for [code], or null if [code] is not a
+  /// canonical error code.
+  AddressErrorCode? get errorCode => AddressErrorCode.tryParse(code);
 }
 
 /// Exception thrown when the routing input is fundamentally malformed.
