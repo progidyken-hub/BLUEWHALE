@@ -1,0 +1,40 @@
+name: ci-bluewhale
+
+# Runs the React component tests for packages/bluewhale. The package keeps
+# its own npm package-lock.json, so it installs with `npm ci` independently
+# of the pnpm workspace lockfile.
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/bluewhale/**"
+      - ".github/workflows/ci-bluewhale.yml"
+  pull_request:
+    paths:
+      - "packages/bluewhale/**"
+      - ".github/workflows/ci-bluewhale.yml"
+
+concurrency:
+  group: ci-bluewhale-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/bluewhale
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: packages/bluewhale/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
