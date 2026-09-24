@@ -1,0 +1,108 @@
+---
+title: "Deprecation Policy"
+description: "How features, warning codes, and error codes are retired across the TypeScript, Go, and Dart SDKs without breaking existing users."
+---
+
+Bluewhale ships the same behavior in three languages. A change that is harmless in one SDK can silently break integrators in another, so every deprecation follows one shared, multi-language process.
+
+## What this policy covers
+
+The following are **public contract** and may only be removed or changed through this policy:
+
+| Surface | Examples |
+| --- | --- |
+| Exported API symbols | `extractRouting`, `normalizeMemoTextId`, `NormalizeMemoTextID`, `RoutingResult`, `SafeRoutingId` |
+| Warning codes | `NON_CANONICAL_ROUTING_ID`, `MEMO_TEXT_UNROUTABLE`, `MEMO_IGNORED_FOR_MUXED` |
+| Error codes | `UNKNOWN_PREFIX`, `INVALID_CHECKSUM`, `INVALID_LENGTH`, `INVALID_BASE32` (the `errorCode` enum in `spec/schema.json`) |
+| Output shape | Field names and types of routing results, warnings (`normalization`, `context`), and `destinationError` |
+| Routing outcomes | Which inputs are routable, what they normalize to, and which warnings they emit |
+| Spec artifacts | `spec/vectors.json`, `spec/schema.json`, and shared fixtures under `spec/` |
+
+Internal helpers, test utilities, debug scripts, and the exact wording of human-readable `message` strings are **not** covered and may change in any release.
+
+<Warning>
+  Integrators must match on `code`, never on `message`. Messages may be reworded in a patch release.
+</Warning>
+
+## Semver guarantees
+
+The spec and all three SDKs follow [Semantic Versioning](https://semver.org/). See [Spec Versioning](/docs/spec/versioning) for how `spec_version` maps to package versions.
+
+| Release | Allowed | Not allowed |
+| --- | --- | --- |
+| **Patch** (`x.y.Z`) | Bug fixes that bring an SDK in line with the spec, new test vectors for existing behavior, docs | New codes, deprecations, removals, output-shape changes |
+| **Minor** (`x.Y.0`) | New APIs, new warning or error codes, new optional output fields, **announcing a deprecation** | Removing or renaming anything, changing a routing outcome, changing a code's severity |
+| **Major** (`X.0.0`) | Removing items whose grace period has ended, changing routing outcomes, severity changes, required output-shape changes | Removing items that were never deprecated in a prior minor |
+
+A code string, once released, is **never reused** for a different meaning, even after it is removed.
+
+## Deprecation lifecycle
+
+Every deprecation moves through three stages.
+
+### 1. Announce (minor release)
+
+- The replacement (if any) ships in the **same** minor release as the deprecation notice, in all three SDKs.
+- The deprecated item keeps its exact current behavior.
+- The item is marked deprecated in each language:
+
+```ts TypeScript
+/** @deprecated Since 1.3.0. Use `AddressParseErrorCode`. Removed in 2.0.0. */
+export type ErrorCode = AddressParseErrorCode;
+```
+
+```go Go
+// Deprecated: Since 1.3.0. Use AllErrorCodes. Removed in 2.0.0.
+var LegacyErrorCodes = AllErrorCodes
+```
+
+```dart Dart
+@Deprecated('Since 1.3.0. Use AddressErrorCode. Removed in 2.0.0.')
+typedef LegacyErrorCode = AddressErrorCode;
+```
+
+- The deprecation is recorded in each package's `CHANGELOG` and in a `pnpm changeset`, and a migration note is added under `docs/migration/`.
+
+### 2. Grace period
+
+A deprecated item remains fully supported until **both** of the following are true:
+
+- at least **two minor releases** have shipped after the announcement, **and**
+- at least **180 days** have passed since the announcement.
+
+During the grace period:
+
+- Bug fixes and security fixes still apply to the deprecated item.
+- For **warning and error codes**, SDKs keep emitting the old code. A replacement code may be added alongside it, but switching which code is emitted for a given input is a major change.
+- For **routing outcomes** (e.g. how `" 123 "` or `"00123"` in `MEMO_TEXT` is handled), the old behavior stays the default. New behavior may only be offered as an explicit opt-in.
+
+<Info>
+  Security fixes are the only exception: a vulnerability may shorten the grace period. The shortened timeline must be stated in the release notes and the security advisory.
+</Info>
+
+### 3. Removal (major release only)
+
+- Removal happens in the next **major** release after the grace period ends, in all three SDKs at the same version.
+- Vectors that exercise the removed behavior are deleted or rewritten in the same release, and `spec_version` receives a major bump.
+- The migration guide lists every removed item and its replacement.
+
+## Vector version compatibility
+
+`spec/vectors.json` is the source of truth that ties the three SDKs together, so its compatibility rules are strict:
+
+1. **SDK major = spec major.** An SDK release `N.y.z` must pass every vector in any `spec_version` `N.a.b` where `a ≤ y`.
+2. **Vectors are additive within a major.** A minor or patch spec release may add vectors but must not change the `expected` output of an existing one. Changing an expected result is a major change.
+3. **Deprecated behavior stays tested.** While an item is in its grace period, its vectors remain in the file. Add a `notes` entry such as `"DEPRECATED since 1.3.0; removed in 2.0.0"` so reviewers know when the vector is scheduled to go.
+4. **Runners ignore unknown fields.** New optional fields in `input` or `expected` (added in a minor) must not break older runners; unknown `module` values are skipped rather than failed.
+5. **Schema follows the same rules.** Adding an enum value to `spec/schema.json` (such as a new warning code) is a minor change; removing one is a major change.
+
+## Contributor checklist
+
+A pull request that deprecates or removes something must:
+
+- [ ] Update TypeScript, Go, and Dart in the **same** PR.
+- [ ] Use each language's native deprecation marker (`@deprecated`, `// Deprecated:`, `@Deprecated`).
+- [ ] State the version the item was deprecated in and the major version it will be removed in.
+- [ ] Keep, or annotate with `notes`, every affected vector in `spec/vectors.json`.
+- [ ] Add a `pnpm changeset` with the correct bump (minor for announcements, major for removals).
+- [ ] Add or update a migration note in `docs/migration/`.

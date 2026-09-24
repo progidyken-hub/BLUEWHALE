@@ -10,6 +10,12 @@ The most impactful way to contribute is by adding new test vectors to `spec/vect
 2. Run `node spec/validate.js` to ensure it meets the schema.
 3. Update the TypeScript, Go, and Dart implementations to pass the new vector.
 
+#### Deprecating or Changing Public Behavior
+Renaming, removing, or changing the behavior of an exported API, warning code, error code, or test vector must follow the [Deprecation Policy](docs/spec/deprecation-policy.mdx). In short:
+*   Deprecations are announced in a **minor** release, in TypeScript, Go, and Dart at the same time.
+*   Deprecated items stay supported for at least **two minor releases and 180 days**.
+*   Removal only happens in the next **major** release, together with a major `spec_version` bump.
+
 #### Reporting Bugs
 *   Check the [Issues](https://github.com/REDISHFISH/BLUEWHALE/issues) to see if the bug has already been reported.
 *   If not, open a new issue with a clear title and description, including steps to reproduce the bug.
@@ -21,7 +27,7 @@ The most impactful way to contribute is by adding new test vectors to `spec/vect
 #### Pull Requests
 1. Fork the repo and create your branch from `main`.
 2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
+3. If you've changed APIs, update the documentation. Breaking or deprecating changes must follow the [Deprecation Policy](docs/spec/deprecation-policy.mdx).
 4. Ensure the test suite passes (`pnpm test`, `go test ./...`, `dart test`).
 5. Use `pnpm changeset` to document your changes.
 

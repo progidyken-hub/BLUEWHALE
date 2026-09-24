@@ -79,7 +79,8 @@
         "docs/spec/overview",
         "docs/spec/compliance-vectors",
         "docs/spec/adding-vectors",
-        "docs/spec/versioning"
+        "docs/spec/versioning",
+        "docs/spec/deprecation-policy"
       ]
     },
     {
