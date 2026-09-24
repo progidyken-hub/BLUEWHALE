@@ -4,13 +4,16 @@ import 'package:test/test.dart';
 import 'package:bluewhale_core/bluewhale_core.dart';
 
 const legacyVectorG = "GA7QYNF7SZFX4X7X5JFZZ3UQ6BXHDSY2RKVKZKX5FFQJ1ZMZX1";
-const legacyVectorMPrefix = "MA7QYNF7SZFX4X7X5JFZZ3UQ6BXHDSY2RKVKZKX5FFQJ1ZMZX1";
-const legacyVectorCPrefix = "CA7QYNF7SZFX4X7X5JFZZ3UQ6BXHDSY2RKVKZKX5FFQJ1ZMZX1";
+const legacyVectorMPrefix =
+    "MA7QYNF7SZFX4X7X5JFZZ3UQ6BXHDSY2RKVKZKX5FFQJ1ZMZX1";
+const legacyVectorCPrefix =
+    "CA7QYNF7SZFX4X7X5JFZZ3UQ6BXHDSY2RKVKZKX5FFQJ1ZMZX1";
 
 const validG = "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI";
 const validC = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 
-String normalizeVectorDestination(String destination, dynamic expectedRoutingId) {
+String normalizeVectorDestination(
+    String destination, dynamic expectedRoutingId) {
   if (destination == legacyVectorG) return validG;
   if (destination.startsWith(legacyVectorMPrefix)) {
     return MuxedAddress.encode(
@@ -97,11 +100,14 @@ void main() {
             try {
               final result = await extractRouting(routingInput);
 
-              expect(result.destinationBaseAccount,
-                  normalizeExpectedBaseAccount(expected['destinationBaseAccount']));
+              expect(
+                  result.destinationBaseAccount,
+                  normalizeExpectedBaseAccount(
+                      expected['destinationBaseAccount']));
 
               if (expected['routingId'] != null) {
-                expect(result.id, BigInt.parse(expected['routingId'].toString()));
+                expect(
+                    result.id, BigInt.parse(expected['routingId'].toString()));
               } else {
                 expect(result.id, isNull);
               }
@@ -115,6 +121,13 @@ void main() {
                 for (var i = 0; i < expectedWarnings.length; i++) {
                   final eW = expectedWarnings[i] as Map<String, dynamic>;
                   expect(result.warnings[i].code, eW['code']);
+                  if (eW.containsKey('normalization')) {
+                    final eN = eW['normalization'] as Map<String, dynamic>;
+                    expect(result.warnings[i].normalization?.original,
+                        eN['original']);
+                    expect(result.warnings[i].normalization?.normalized,
+                        eN['normalized']);
+                  }
                 }
               }
 
@@ -135,4 +148,3 @@ void main() {
     }
   });
 }
-

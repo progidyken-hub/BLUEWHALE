@@ -40,6 +40,21 @@ func fitsUint64(s string) bool {
 	return s <= uint64MaxStr
 }
 
+// NormalizeMemoTextID normalizes a MEMO_TEXT value into a canonical uint64
+// routing ID.
+//
+// Cross-SDK contract (identical in TypeScript and Dart normalizeMemoTextId,
+// enforced by spec/memo_text_normalization.json):
+//   - The input is never trimmed. Surrounding or embedded whitespace
+//     (e.g. " 123 ") makes the memo unroutable: Normalized is "" and no
+//     warning is emitted.
+//   - Only ASCII digits 0-9 are accepted (no sign, exponent, separators or
+//     non-ASCII digits).
+//   - Leading zeros (e.g. "00123") are stripped to the canonical form ("123",
+//     or "0" for all zeros) and a single NON_CANONICAL_ROUTING_ID warning is
+//     emitted with Normalization.Original set to the raw input and
+//     Normalization.Normalized set to the stripped value.
+//   - Values above uint64 max are unroutable; any leading-zero warning is kept.
 func NormalizeMemoTextID(s string) NormalizeResult {
 	if s == "" || !isAllDigits(s) {
 		return NormalizeResult{}

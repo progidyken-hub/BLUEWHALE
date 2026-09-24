@@ -22,7 +22,8 @@ import 'safe_routing_id.dart';
 RoutingResult extractRoutingSync(RoutingInput input) {
   final trimmed = input.destination.trim();
   if (trimmed.isEmpty) {
-    throw const ExtractRoutingException('Invalid input: destination must be a non-empty string.');
+    throw const ExtractRoutingException(
+        'Invalid input: destination must be a non-empty string.');
   }
 
   final prefix = trimmed[0].toUpperCase();
@@ -67,6 +68,7 @@ RoutingResult extractRoutingSync(RoutingInput input) {
       code: w.code,
       severity: w.severity,
       message: w.message,
+      normalization: w.normalization,
     ));
   }
 
@@ -108,6 +110,7 @@ RoutingResult extractRoutingSync(RoutingInput input) {
           code: w.code,
           severity: w.severity,
           message: w.message,
+          normalization: w.normalization,
         ));
       }
     } else if (input.memoType == 'text' && input.memoValue != null) {
@@ -129,6 +132,7 @@ RoutingResult extractRoutingSync(RoutingInput input) {
           code: w.code,
           severity: w.severity,
           message: w.message,
+          normalization: w.normalization,
         ));
       }
     } else if (input.memoType == 'hash' || input.memoType == 'return') {
@@ -179,6 +183,7 @@ RoutingResult extractRoutingSync(RoutingInput input) {
         code: w.code,
         severity: w.severity,
         message: w.message,
+        normalization: w.normalization,
       ));
     }
   } else if (input.memoType == 'text' && input.memoValue != null) {
@@ -200,6 +205,7 @@ RoutingResult extractRoutingSync(RoutingInput input) {
         code: w.code,
         severity: w.severity,
         message: w.message,
+        normalization: w.normalization,
       ));
     }
   } else if (input.memoType == 'hash' || input.memoType == 'return') {

@@ -4,6 +4,7 @@
 /// never have to push 64-bit routing IDs through a JS `Number`.
 library;
 
+import '../address/codes.dart' show Normalization;
 import 'safe_routing_id.dart';
 
 /// Identifies the mechanism used to resolve a routing ID.
@@ -41,10 +42,15 @@ class RoutingWarning {
   /// A descriptive message explaining the warning.
   final String message;
 
+  /// The original and canonical values when the warning reports a
+  /// normalization (e.g. `NON_CANONICAL_ROUTING_ID`), otherwise null.
+  final Normalization? normalization;
+
   const RoutingWarning({
     required this.code,
     required this.severity,
     required this.message,
+    this.normalization,
   });
 
   /// Emitted when a memo is present but ignored because the destination is a muxed address.
@@ -65,7 +71,8 @@ class RoutingWarning {
   static const missingRequiredMemo = RoutingWarning(
     code: 'MISSING_REQUIRED_MEMO',
     severity: 'error',
-    message: 'Destination account requires a memo, but no routing ID was provided.',
+    message:
+        'Destination account requires a memo, but no routing ID was provided.',
   );
 
   @override
@@ -78,10 +85,13 @@ class RoutingWarning {
           runtimeType == other.runtimeType &&
           code == other.code &&
           severity == other.severity &&
-          message == other.message;
+          message == other.message &&
+          normalization?.original == other.normalization?.original &&
+          normalization?.normalized == other.normalization?.normalized;
 
   @override
-  int get hashCode => Object.hash(code, severity, message);
+  int get hashCode => Object.hash(code, severity, message,
+      normalization?.original, normalization?.normalized);
 }
 
 /// Details of a terminal error encountered during destination account parsing.
@@ -180,7 +190,8 @@ final class RoutingResult {
   /// [SafeRoutingId] is the BigInt-backed wrapper that guarantees the exact
   /// value survives parsing, comparison, and JSON serialization on all
   /// platforms, including Flutter Web.
-  SafeRoutingId? get safeId => id == null ? null : SafeRoutingId.fromBigInt(id!);
+  SafeRoutingId? get safeId =>
+      id == null ? null : SafeRoutingId.fromBigInt(id!);
 
   String toDisplayString() {
     switch (source) {

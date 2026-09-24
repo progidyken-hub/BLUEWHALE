@@ -1,0 +1,30 @@
+{
+  "description": "Cross-SDK parity fixture for MEMO_TEXT routing-ID normalization (normalizeMemoTextId / NormalizeMemoTextID). Every SDK must produce exactly the listed `normalized` value and, when `warning` is non-null, exactly one NON_CANONICAL_ROUTING_ID warning whose normalization.original / normalization.normalized match byte-for-byte. Policy: the value is NEVER trimmed. Leading zeros are normalized with a warning; any whitespace, sign, separator, or non-ASCII digit makes the memo unroutable (normalized = null, no warnings).",
+  "cases": [
+    { "input": "123", "normalized": "123", "warning": null },
+    { "input": "0", "normalized": "0", "warning": null },
+    { "input": "00123", "normalized": "123", "warning": { "original": "00123", "normalized": "123" } },
+    { "input": "0123", "normalized": "123", "warning": { "original": "0123", "normalized": "123" } },
+    { "input": "000", "normalized": "0", "warning": { "original": "000", "normalized": "0" } },
+    { "input": "00", "normalized": "0", "warning": { "original": "00", "normalized": "0" } },
+    { "input": "18446744073709551615", "normalized": "18446744073709551615", "warning": null },
+    { "input": "018446744073709551615", "normalized": "18446744073709551615", "warning": { "original": "018446744073709551615", "normalized": "18446744073709551615" } },
+    { "input": "18446744073709551616", "normalized": null, "warning": null },
+    { "input": "0018446744073709551616", "normalized": null, "warning": { "original": "0018446744073709551616", "normalized": "18446744073709551616" } },
+    { "input": "", "normalized": null, "warning": null },
+    { "input": " 123 ", "normalized": null, "warning": null },
+    { "input": " 123", "normalized": null, "warning": null },
+    { "input": "123 ", "normalized": null, "warning": null },
+    { "input": " 00123 ", "normalized": null, "warning": null },
+    { "input": "\t123", "normalized": null, "warning": null },
+    { "input": "123\n", "normalized": null, "warning": null },
+    { "input": "1 23", "normalized": null, "warning": null },
+    { "input": "+123", "normalized": null, "warning": null },
+    { "input": "-1", "normalized": null, "warning": null },
+    { "input": "1e3", "normalized": null, "warning": null },
+    { "input": "12.0", "normalized": null, "warning": null },
+    { "input": "0x1F", "normalized": null, "warning": null },
+    { "input": "１２３", "normalized": null, "warning": null },
+    { "input": "١٢٣", "normalized": null, "warning": null }
+  ]
+}

@@ -61,6 +61,19 @@ NormalizeResult normalizeMemoId(String s) {
 
 /// Normalizer for MEMO_TEXT type — tries to parse a numeric routing ID.
 /// Leading zeros trigger a normalization warning; non-numeric values return null.
+///
+/// Cross-SDK contract (identical in TypeScript `normalizeMemoTextId` and Go
+/// `NormalizeMemoTextID`, enforced by `spec/memo_text_normalization.json`):
+/// - The input is never trimmed. Surrounding or embedded whitespace
+///   (e.g. `' 123 '`) makes the memo unroutable: `normalized` is null and no
+///   warning is emitted.
+/// - Only ASCII digits `0-9` are accepted (no sign, exponent, separators or
+///   non-ASCII digits).
+/// - Leading zeros (e.g. `'00123'`) are stripped to the canonical form
+///   (`'123'`, or `'0'` for all zeros) and a single `NON_CANONICAL_ROUTING_ID`
+///   warning is emitted with `normalization.original` set to the raw input and
+///   `normalization.normalized` set to the stripped value.
+/// - Values above uint64 max are unroutable; any leading-zero warning is kept.
 NormalizeResult normalizeMemoTextId(String s) {
   final warnings = <Warning>[];
 
