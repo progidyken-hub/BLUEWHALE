@@ -74,6 +74,22 @@
         "message": { "type": "string" }
       }
     },
+    "errorCode": {
+      "type": "string",
+      "enum": [
+        "INVALID_CHECKSUM", "INVALID_LENGTH", "INVALID_BASE32",
+        "UNKNOWN_PREFIX", "REJECTED_SEED_KEY", "REJECTED_PREAUTH",
+        "REJECTED_HASH_X", "FEDERATION_ADDRESS_NOT_SUPPORTED"
+      ]
+    },
+    "destinationError": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "$ref": "#/definitions/errorCode" },
+        "message": { "type": "string" }
+      }
+    },
     "warning": {
       "oneOf": [
         { "$ref": "#/definitions/warningNormalization" },
@@ -105,7 +121,8 @@
               "warnings": {
                 "type": "array",
                 "items": { "$ref": "#/definitions/warning" }
-              }
+              },
+              "destinationError": { "$ref": "#/definitions/destinationError" }
             }
           },
           "tags": {
