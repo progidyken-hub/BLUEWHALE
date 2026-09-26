@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "packages/core-ts/**"
+      - "packages/bluewhale/**"
       - "spec/**"
     # `verify-parity` owns this file's CI surface; skip here to avoid
     # duplicate runs on vectors-only PRs.
@@ -28,6 +29,7 @@ jobs:
           cache: "pnpm"
       - run: pnpm install
       - run: pnpm --filter @redishfish/bluewhale-core test -- --coverage
+      - run: pnpm --filter @redishfish/bluewhale test
       - name: Upload TypeScript coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
