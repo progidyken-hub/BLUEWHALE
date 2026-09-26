@@ -129,6 +129,12 @@ Skip `pnpm changeset` for changes that don't affect published packages:
 
 ---
 
+## Deprecation and Versioning
+
+When changing or removing a feature, warning code, or error code, follow the [multi-language deprecation policy](docs/spec/deprecation-policy.mdx). Deprecations must land in the TypeScript, Go, and Dart SDKs together.
+
+---
+
 ## Style Guide
 
 - **TypeScript**: Follow the existing Prettier/ESLint config.
