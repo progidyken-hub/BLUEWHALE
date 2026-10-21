@@ -20,8 +20,8 @@ jobs:
       matrix:
         target: [FuzzParse, FuzzDetect]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: packages/core-go/go.mod
       - name: Run ${{ matrix.target }}
@@ -29,7 +29,7 @@ jobs:
         run: go test ./address -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime "${{ inputs.fuzztime || '5m' }}"
       - name: Upload failing inputs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-findings-${{ matrix.target }}
           path: packages/core-go/address/testdata/fuzz/
