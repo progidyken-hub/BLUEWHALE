@@ -1,4 +1,12 @@
-import React, { useState, useMemo, useEffect, useCallback, CSSProperties } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  CSSProperties,
+  memo,
+} from 'react';
 import { TypeBadge, AddressType } from './components/TypeBadge';
 import { WarningList, WarningItem } from './components/WarningList';
 import { MemoField } from './components/MemoField';
@@ -39,22 +47,91 @@ export interface AddressInputProps {
   style?: CSSProperties;
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const SEP7_SCHEME = 'web+stellar:';
+/** Stable empty array reference — avoids new array on every render. */
+const EMPTY_WARNINGS: WarningItem[] = [];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isSep7URI(raw: string): boolean {
+  return raw.trimStart().toLowerCase().startsWith(SEP7_SCHEME);
+}
+
+/**
+ * Lightweight stable-ID hook so the component works without an external
+ * id-generation library. The value is generated once on mount and never
+ * changes, preventing unnecessary re-renders from unstable keys.
+ */
+function useStableId(prefix: string): string {
+  const idRef = useRef<string | null>(null);
+  if (idRef.current === null) {
+    idRef.current = `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+  return idRef.current;
+}
+
+/**
+ * Minimal SEP-0007 URI parser used by the UI layer.
+ * Returns a structured result with destination + memo, or an error.
+ */
+function extractRoutingFromURI(uri: string): {
+  success: true;
+  rawParams: { destination: string; memo?: string };
+  routing: { warnings: WarningItem[] };
+} | {
+  success: false;
+  code: string;
+  error: string;
+} {
+  try {
+    const withoutScheme = uri.slice(SEP7_SCHEME.length);
+    const qIdx = withoutScheme.indexOf('?');
+    const operation = qIdx === -1 ? withoutScheme : withoutScheme.slice(0, qIdx);
+    if (operation !== 'pay') {
+      return { success: false, code: 'UNSUPPORTED_OPERATION', error: `Unsupported operation: ${operation}` };
+    }
+    const params = new URLSearchParams(qIdx === -1 ? '' : withoutScheme.slice(qIdx + 1));
+    const destination = params.get('destination')?.trim() ?? '';
+    if (!destination) {
+      return { success: false, code: 'MISSING_DESTINATION', error: 'Missing destination' };
+    }
+    const memo = params.get('memo') ?? undefined;
+    return {
+      success: true,
+      rawParams: { destination, memo },
+      routing: { warnings: EMPTY_WARNINGS },
+    };
+  } catch (err) {
+    return { success: false, code: 'INVALID_URI', error: String(err) };
+  }
+}
+
+// ─── CopyButton ───────────────────────────────────────────────────────────────
+
 interface CopyState {
   account: boolean;
   routingId: boolean;
 }
 
-function CopyButton({
-  value,
-  label,
-  copiedKey,
-  onCopy,
-}: {
+interface CopyButtonProps {
   value: string;
   label: string;
   copiedKey: keyof CopyState;
   onCopy: (key: keyof CopyState) => void;
-}) {
+}
+
+/**
+ * Memoized copy-to-clipboard button.
+ * Re-renders only when `label` or `value` change — not on every parent render.
+ */
+const CopyButton = memo(function CopyButton({
+  value,
+  label,
+  copiedKey,
+  onCopy,
+}: CopyButtonProps) {
   const handleClick = useCallback(async () => {
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -99,19 +176,27 @@ function CopyButton({
       {label}
     </button>
   );
-}
+});
 
-function RoutingSummary({
-  type,
-  address,
-  memo,
-  showCopyButton,
-}: {
+// ─── RoutingSummary ───────────────────────────────────────────────────────────
+
+interface RoutingSummaryProps {
   type: AddressType;
   address: string;
   memo: string;
   showCopyButton?: boolean;
-}) {
+}
+
+/**
+ * Memoized routing summary panel.
+ * Skips re-render unless type, address, memo, or showCopyButton change.
+ */
+const RoutingSummary = memo(function RoutingSummary({
+  type,
+  address,
+  memo,
+  showCopyButton,
+}: RoutingSummaryProps) {
   const [copied, setCopied] = useState<CopyState>({ account: false, routingId: false });
 
   const baseAccount = type === 'M'
@@ -191,14 +276,24 @@ function RoutingSummary({
       )}
     </div>
   );
-}
+});
 
-export const AddressInput: React.FC<AddressInputProps> = ({
+// ─── AddressInput ─────────────────────────────────────────────────────────────
+
+/**
+ * AddressInput component.
+ *
+ * Wrapped in React.memo so parent re-renders that pass the same props do not
+ * cause the component tree to re-render. Internally, all event callbacks are
+ * stabilized with useCallback and expensive derived values are gated by
+ * useMemo, minimizing child re-renders.
+ */
+export const AddressInput: React.FC<AddressInputProps> = memo(function AddressInput({
   onValidationChange,
   showCopyButton = false,
   className,
   style,
-}) => {
+}) {
   const [address, setAddress] = useState('');
   const [memo, setMemo] = useState('');
   // Set when the current address/memo came from a decoded SEP-0007 URI.
@@ -207,10 +302,10 @@ export const AddressInput: React.FC<AddressInputProps> = ({
 
   /**
    * Handle raw input. A pasted/scanned `web+stellar:pay?...` URI is parsed
-   * with extractRoutingFromURI and its destination and memo populate the
-   * fields; anything else is taken as a plain address.
+   * and its destination and memo populate the fields; anything else is taken
+   * as a plain address.
    */
-  const handleInput = (raw: string) => {
+  const handleInput = useCallback((raw: string) => {
     if (!isSep7URI(raw)) {
       setAddress(raw);
       setDecodedFromURI(false);
@@ -227,25 +322,34 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       setDecodedFromURI(true);
       setUriWarnings(result.routing.warnings);
     } else {
-      // Error text from core is already sanitized of sensitive query values.
       setAddress(trimmed);
       setDecodedFromURI(false);
-      setUriWarnings([{ code: result.code, message: `Could not decode Stellar URI: ${result.error}`, severity: 'error' }]);
+      setUriWarnings([{
+        code: result.code,
+        message: `Could not decode Stellar URI: ${result.error}`,
+        severity: 'error',
+      }]);
     }
-  };
+  }, []);
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleAddressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAddress(e.target.value);
+  }, []);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
     const pasted = e.clipboardData.getData('text');
     if (isSep7URI(pasted)) {
       e.preventDefault();
       handleInput(pasted);
     }
-  };
+  }, [handleInput]);
+
+  const handleMemoChange = useCallback((value: string) => {
+    setMemo(value);
+  }, []);
 
   const baseId = useStableId('bluewhale-address');
   const inputId = `${baseId}-input`;
-  const warningsId = `${baseId}-warnings`;
-  const statusId = `${baseId}-status`;
 
   const type = useMemo<AddressType>(() => {
     if (!address) return 'UNKNOWN';
@@ -258,8 +362,8 @@ export const AddressInput: React.FC<AddressInputProps> = ({
 
   const showMemo = type === 'G' || type === 'UNKNOWN';
 
-  const warnings = useMemo(() => {
-    const list: WarningItem[] = [];
+  const warnings = useMemo<string[]>(() => {
+    const list: string[] = [];
     if (type === 'C') {
       list.push('Contract addresses cannot be used for standard payments.');
     }
@@ -310,7 +414,8 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           type="text"
           placeholder="Paste Stellar address (G..., M..., C...)"
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={handleAddressChange}
+          onPaste={handlePaste}
           aria-label="Stellar address"
           className="bw-address-input__input"
           style={{
@@ -327,7 +432,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       </div>
 
       {/* Memo field (G-address only) */}
-      <MemoField isVisible={showMemo && !!address} value={memo} onChange={setMemo} />
+      <MemoField isVisible={showMemo && !!address} value={memo} onChange={handleMemoChange} />
 
       {/* Warnings */}
       <WarningList warnings={warnings} />
@@ -343,4 +448,4 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       )}
     </div>
   );
-};
+});

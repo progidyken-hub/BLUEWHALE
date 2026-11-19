@@ -98,6 +98,12 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
     .filter(Boolean)
     .join(' ');
 
+  const titleMap: Record<Exclude<AddressType, 'UNKNOWN'>, string> = {
+    G: 'Ed25519 Public Key',
+    M: 'Muxed Account (SEP-23)',
+    C: 'Contract Address',
+  };
+
   return (
     <div
       className={rootClass}
@@ -116,7 +122,7 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
         userSelect: 'none',
         ...style,
       }}
-      title={title}
+      title={titleMap[type]}
     >
       {type}
     </div>

@@ -1,7 +1,22 @@
 import React, { CSSProperties } from 'react';
 
+/** A warning entry – either a plain string or a structured object. */
+export type WarningItem =
+  | string
+  | { code: string; message: string; severity: 'warning' | 'error' };
+
+/** Extract the display text from a WarningItem. */
+function warningText(w: WarningItem): string {
+  return typeof w === 'string' ? w : w.message;
+}
+
+const containerStyle = {
+  backgroundColor: '#fffbeb',
+  borderColor: '#fcd34d',
+};
+
 interface WarningListProps {
-  warnings: string[];
+  warnings: (string | WarningItem)[];
   /** Additional CSS class names merged onto the root element. */
   className?: string;
   /** Inline styles applied to the root element. */
@@ -40,7 +55,7 @@ export const WarningList: React.FC<WarningListProps> = ({ warnings, className, s
             className="bw-warning-item"
             style={{ marginBottom: '0.25rem' }}
           >
-            {warning}
+            {warningText(warning)}
           </li>
         ))}
       </ul>
