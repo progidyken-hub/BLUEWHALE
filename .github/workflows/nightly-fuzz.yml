@@ -1,0 +1,174 @@
+name: Nightly Fuzz
+
+on:
+  schedule:
+    # Run every night at 01:00 UTC (2 hours before the existing fuzz jobs)
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      fuzztime:
+        description: "Total fuzz duration per target (Go duration string, e.g. 2h, 30m)"
+        required: false
+        default: "2h"
+
+permissions:
+  contents: read
+  issues: write   # Required to open a GitHub issue on crasher discovery
+
+jobs:
+  fuzz-go:
+    name: "Go – ${{ matrix.target }} (2 h)"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [FuzzParse, FuzzDetect]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/core-go/go.mod
+
+      - name: Run ${{ matrix.target }} for ${{ inputs.fuzztime || '2h' }}
+        id: fuzz
+        working-directory: packages/core-go
+        run: |
+          go test ./address \
+            -run '^$' \
+            -fuzz '^${{ matrix.target }}$' \
+            -fuzztime "${{ inputs.fuzztime || '2h' }}"
+
+      - name: Archive crashing seed inputs
+        if: failure() && steps.fuzz.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crashers-go-${{ matrix.target }}-${{ github.run_id }}
+          path: packages/core-go/address/testdata/fuzz/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: File GitHub issue on crasher discovery
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🐛 Nightly fuzz crasher: Go \`${{ matrix.target }}\` (run #${{ github.run_id }})`;
+            const body = [
+              '## Nightly Fuzzing Failure',
+              '',
+              `A panic or crasher was discovered by the nightly Go fuzzer.`,
+              '',
+              `| Field | Value |`,
+              `|-------|-------|`,
+              `| **Target** | \`${{ matrix.target }}\` |`,
+              `| **Workflow run** | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |`,
+              `| **Branch/ref** | \`${{ github.ref_name }}\` |`,
+              `| **Triggered by** | ${{ github.event_name }} |`,
+              '',
+              '## Reproducing',
+              '',
+              '1. Download the **crashers** artifact attached to the workflow run above.',
+              '2. Place the crashing input under `packages/core-go/address/testdata/fuzz/${{ matrix.target }}/`.',
+              '3. Run:',
+              '   ```bash',
+              '   cd packages/core-go',
+              '   go test ./address -run ${{ matrix.target }}',
+              '   ```',
+              '',
+              '## Next Steps',
+              '',
+              '- [ ] Identify the root cause.',
+              '- [ ] Add the crashing input as a regression test vector.',
+              '- [ ] Fix the underlying bug and open a PR referencing this issue.',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['bug', 'fuzzing', 'ci'],
+            });
+
+  fuzz-rust:
+    name: "Rust – rust-address-fuzzer (2 h)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run Rust fuzzer for ${{ inputs.fuzztime || '2h' }}
+        id: fuzz
+        run: |
+          cd examples/rust-address-fuzzer
+          # Convert Go-style duration to seconds for the Rust runner.
+          # Accepts '2h', '30m', '90s', or plain integer seconds.
+          DURATION="${{ inputs.fuzztime || '2h' }}"
+          if [[ "$DURATION" =~ ^([0-9]+)h$ ]]; then
+            SECS=$(( ${BASH_REMATCH[1]} * 3600 ))
+          elif [[ "$DURATION" =~ ^([0-9]+)m$ ]]; then
+            SECS=$(( ${BASH_REMATCH[1]} * 60 ))
+          elif [[ "$DURATION" =~ ^([0-9]+)s?$ ]]; then
+            SECS="${BASH_REMATCH[1]}"
+          else
+            SECS=7200
+          fi
+          cargo run --release -- --random 100000 --max-iterations 100000 --time-limit "$SECS"
+
+      - name: Archive crashing seed inputs
+        if: failure() && steps.fuzz.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crashers-rust-${{ github.run_id }}
+          path: examples/rust-address-fuzzer/findings/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: File GitHub issue on crasher discovery
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🐛 Nightly fuzz crasher: Rust address-fuzzer (run #${{ github.run_id }})`;
+            const body = [
+              '## Nightly Fuzzing Failure',
+              '',
+              'A panic or crasher was discovered by the nightly Rust fuzzer.',
+              '',
+              `| Field | Value |`,
+              `|-------|-------|`,
+              `| **Target** | \`rust-address-fuzzer\` |`,
+              `| **Workflow run** | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |`,
+              `| **Branch/ref** | \`${{ github.ref_name }}\` |`,
+              `| **Triggered by** | ${{ github.event_name }} |`,
+              '',
+              '## Reproducing',
+              '',
+              '1. Download the **crashers** artifact attached to the workflow run above.',
+              '2. Place the crashing inputs under `examples/rust-address-fuzzer/findings/`.',
+              '3. Run:',
+              '   ```bash',
+              '   cd examples/rust-address-fuzzer',
+              '   cargo run --release -- --replay findings/',
+              '   ```',
+              '',
+              '## Next Steps',
+              '',
+              '- [ ] Identify the root cause.',
+              '- [ ] Add the crashing input as a regression test vector.',
+              '- [ ] Fix the underlying bug and open a PR referencing this issue.',
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['bug', 'fuzzing', 'ci'],
+            });

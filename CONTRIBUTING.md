@@ -7,6 +7,7 @@ First off, thank you for considering contributing to Bluewhale! It's people like
 - [How Can I Contribute?](#how-can-i-contribute)
 - [Development Setup](#development-setup)
 - [Commit Message Convention](#commit-message-convention)
+- [Signed Commits & Branch Protection](#signed-commits--branch-protection)
 - [Changeset Workflow](#changeset-workflow)
 - [Style Guide](#style-guide)
 - [Code of Conduct](#code-of-conduct)
@@ -92,6 +93,71 @@ chore: bump pnpm to v9
 ```
 
 > **PR titles are linted automatically** via the `Lint PR Title` GitHub Actions workflow. A PR with a non-conforming title will fail the check and must be corrected before merging.
+
+---
+
+## Signed Commits & Branch Protection
+
+Bluewhale's core deposit-routing libraries handle sensitive financial data. To protect the integrity of the `main` branch, **all commits merged into `main` must be cryptographically signed** with a GPG or SSH key, and **merge commits are not permitted** (the branch enforces a linear history).
+
+The `commit-lint.yml` CI workflow automatically enforces both requirements on every PR. A PR with unsigned commits or merge commits will fail the check and cannot be merged until corrected.
+
+### Setting up GPG commit signing
+
+1. Generate a GPG key (if you don't have one):
+
+   ```bash
+   gpg --full-generate-key
+   ```
+
+2. Export the public key and [add it to your GitHub account](https://docs.github.com/en/authentication/managing-commit-signature-verification/adding-a-gpg-key-to-your-github-account):
+
+   ```bash
+   gpg --armor --export <KEY_ID>
+   ```
+
+3. Tell Git to sign all commits automatically:
+
+   ```bash
+   git config --global user.signingkey <KEY_ID>
+   git config --global commit.gpgsign true
+   ```
+
+### Setting up SSH commit signing (alternative)
+
+1. [Add an SSH key to your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account) if you haven't already.
+2. Configure Git to use SSH signing:
+
+   ```bash
+   git config --global gpg.format ssh
+   git config --global user.signingkey ~/.ssh/id_ed25519.pub   # adjust path as needed
+   git config --global commit.gpgsign true
+   ```
+
+### Keeping a linear history
+
+Do not merge `main` into your feature branch. Instead, rebase:
+
+```bash
+git fetch origin
+git rebase origin/main
+```
+
+If you have already pushed commits that need to be rebased, use a force-push onto your own feature branch:
+
+```bash
+git push --force-with-lease origin <your-branch>
+```
+
+### Branch protection requirements for `main`
+
+| Requirement                        | Enforced by                      |
+| ---------------------------------- | -------------------------------- |
+| All commits GPG/SSH signed         | `commit-lint.yml` CI check       |
+| No merge commits (linear history)  | `commit-lint.yml` CI check       |
+| At least 1 approving review        | GitHub branch protection rules   |
+| All CI checks must pass            | GitHub branch protection rules   |
+| No direct pushes to `main`         | GitHub branch protection rules   |
 
 ---
 

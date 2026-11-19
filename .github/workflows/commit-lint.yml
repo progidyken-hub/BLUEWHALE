@@ -1,0 +1,70 @@
+name: Commit Lint & Signed-Commit Enforcement
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  signed-commits:
+    name: Verify all commits are GPG/SSH signed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch (full history)
+        uses: actions/checkout@v4
+        with:
+          # Fetch the full history of the PR so every commit can be inspected
+          fetch-depth: 0
+
+      - name: Check every commit in the PR is signed
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          echo "Checking commits from $BASE_SHA..$HEAD_SHA"
+          UNSIGNED=()
+          while IFS= read -r commit; do
+            sig=$(git verify-commit "$commit" 2>&1) || true
+            if ! git verify-commit "$commit" > /dev/null 2>&1; then
+              UNSIGNED+=("$commit")
+            fi
+          done < <(git log --format="%H" "$BASE_SHA..$HEAD_SHA")
+
+          if [ "${#UNSIGNED[@]}" -gt 0 ]; then
+            echo "❌ The following commits are NOT signed:"
+            printf '  %s\n' "${UNSIGNED[@]}"
+            echo ""
+            echo "All commits merged into 'main' must be signed with a GPG or SSH key."
+            echo "See CONTRIBUTING.md for setup instructions."
+            exit 1
+          fi
+          echo "✅ All $(git log --oneline "$BASE_SHA..$HEAD_SHA" | wc -l) commit(s) are signed."
+
+  linear-history:
+    name: Enforce linear git history (no merge commits)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject merge commits in PR
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          MERGE_COMMITS=$(git log --merges --format="%H %s" "$BASE_SHA..$HEAD_SHA")
+          if [ -n "$MERGE_COMMITS" ]; then
+            echo "❌ Merge commits are not allowed on this branch."
+            echo "$MERGE_COMMITS"
+            echo ""
+            echo "Please rebase your branch onto the latest main instead of merging."
+            echo "See CONTRIBUTING.md for details."
+            exit 1
+          fi
+          echo "✅ No merge commits found — history is linear."

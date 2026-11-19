@@ -44,10 +44,45 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Generate and publish SBOM
+      # --- SBOM generation (runs on tagged releases and when changesets publishes) ---
+
+      - name: Generate SBOM – bluewhale-core (CycloneDX JSON)
         uses: anchore/sbom-action@v0
         if: steps.changesets.outputs.published == 'true' || startsWith(github.ref, 'refs/tags/')
         with:
-          artifact-name: sbom.spdx.json
-          output-file: ./sbom.spdx.json
+          path: ./packages/bluewhale-core
+          artifact-name: sbom-bluewhale-core.cdx.json
+          output-file: ./sbom-bluewhale-core.cdx.json
+          format: cyclonedx-json
+
+      - name: Generate SBOM – bluewhale (React UI, CycloneDX JSON)
+        uses: anchore/sbom-action@v0
+        if: steps.changesets.outputs.published == 'true' || startsWith(github.ref, 'refs/tags/')
+        with:
+          path: ./packages/bluewhale
+          artifact-name: sbom-bluewhale.cdx.json
+          output-file: ./sbom-bluewhale.cdx.json
+          format: cyclonedx-json
+
+      - name: Generate SBOM – core-go (CycloneDX JSON)
+        uses: anchore/sbom-action@v0
+        if: steps.changesets.outputs.published == 'true' || startsWith(github.ref, 'refs/tags/')
+        with:
+          path: ./packages/core-go
+          artifact-name: sbom-core-go.cdx.json
+          output-file: ./sbom-core-go.cdx.json
+          format: cyclonedx-json
+
+      - name: Generate SBOM – core-dart (CycloneDX JSON)
+        uses: anchore/sbom-action@v0
+        if: steps.changesets.outputs.published == 'true' || startsWith(github.ref, 'refs/tags/')
+        with:
+          path: ./packages/core-dart
+          artifact-name: sbom-core-dart.cdx.json
+          output-file: ./sbom-core-dart.cdx.json
+          format: cyclonedx-json
+
+      - name: Attach SBOM files as release assets
+        uses: anchore/sbom-action/publish-sbom@v0
+        if: steps.changesets.outputs.published == 'true' || startsWith(github.ref, 'refs/tags/')
 

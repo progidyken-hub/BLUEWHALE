@@ -1,0 +1,41 @@
+name: Docs Link Checker
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "*.md"
+      - "*.mdx"
+      - "mint.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  link-check:
+    name: Check for broken links in Mintlify docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Lychee link checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Scan all .md and .mdx files in docs/ and repo root
+          args: >-
+            --verbose
+            --no-progress
+            --exclude-loopback
+            --max-retries 3
+            --retry-wait-time 5
+            'docs/**/*.md'
+            'docs/**/*.mdx'
+            '*.md'
+            '*.mdx'
+          # Fail CI if any link returns 404
+          fail: true
+        env:
+          # Provide a token to avoid GitHub rate-limiting on internal links
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
