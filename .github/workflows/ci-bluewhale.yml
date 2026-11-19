@@ -1,0 +1,40 @@
+name: ci-bluewhale
+
+on:
+  pull_request:
+    paths:
+      - "packages/bluewhale/**"
+      - ".github/workflows/ci-bluewhale.yml"
+
+concurrency:
+  group: ci-bluewhale-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-coverage:
+    name: Bluewhale – unit tests + ≥95% line coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests with coverage enforcement
+        # --coverage causes vitest to collect coverage and fail the run when
+        # any threshold defined in vitest.config.ts (lines/statements/
+        # functions/branches >= 95%) is not met.
+        run: pnpm --filter @redishfish/bluewhale exec vitest run --coverage

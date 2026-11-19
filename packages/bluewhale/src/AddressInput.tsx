@@ -434,8 +434,8 @@ export const AddressInput: React.FC<AddressInputProps> = memo(function AddressIn
       {/* Memo field (G-address only) */}
       <MemoField isVisible={showMemo && !!address} value={memo} onChange={handleMemoChange} />
 
-      {/* Warnings */}
-      <WarningList warnings={warnings} />
+      {/* Warnings – includes both address-type warnings and any URI decode errors */}
+      <WarningList warnings={[...warnings, ...uriWarnings]} />
 
       {/* Routing summary with optional copy buttons */}
       {type !== 'C' && address && (
