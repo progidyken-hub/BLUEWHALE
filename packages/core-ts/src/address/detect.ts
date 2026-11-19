@@ -69,7 +69,10 @@ export function detect(address: string): "G" | "M" | "C" | "invalid" {
       // M-addresses (SEP-23) payload consists of 1 version byte (0x60),
       // 32-byte pubkey, 8-byte ID, and 2-byte CRC16 checksum.
       if (decoded.length === 43 && decoded[0] === 0x60) {
-        const data = decoded.slice(0, decoded.length - 2);
+        // subarray returns a view over the same ArrayBuffer without copying;
+        // slice would allocate a new Uint8Array. The CRC function only reads
+        // the bytes, so a view is sufficient.
+        const data = decoded.subarray(0, decoded.length - 2);
         const checksum =
           decoded[decoded.length - 2] | (decoded[decoded.length - 1] << 8);
         if (crc16(data) === checksum) {
