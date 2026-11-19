@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright – ignore runtime artifacts but KEEP snapshot baselines
+playwright-report/
+test-results/
