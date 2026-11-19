@@ -1,5 +1,5 @@
 {
-  "spec_version": "1.0.1",
+  "spec_version": "1.1.0",
   "description": "Normative test vectors for the Bluewhale. This file is the single source of truth for routing logic across TypeScript, Go, and Dart implementations. Any change to routing behavior MUST start here.",
   "cases": [
     {
@@ -546,6 +546,78 @@
         "code": "MISSING_DESTINATION"
       },
       "tags": ["negative"]
+    },
+    {
+      "module": "detect",
+      "description": "G-address with valid base32 chars but wrong last checksum byte must be rejected",
+      "input": {
+        "address": "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2I"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "Every character is a valid base32 character and the address has the correct length for a G-address (56 chars). Only the final checksum byte is flipped (H→I). Implementations must reject this."
+    },
+    {
+      "module": "detect",
+      "description": "G-address with valid base32 chars but wrong second-to-last checksum byte must be rejected",
+      "input": {
+        "address": "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX3H"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "Every character is a valid base32 character and the address has the correct length for a G-address. The second-to-last character is flipped (2→3), corrupting the first checksum byte. Implementations must reject this."
+    },
+    {
+      "module": "detect",
+      "description": "G-address with valid base32 chars but both checksum bytes corrupted must be rejected",
+      "input": {
+        "address": "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX5I"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "Both trailing checksum characters are changed to other valid base32 characters (2H→5I). The address is otherwise structurally correct. Implementations must verify CRC16 and reject this."
+    },
+    {
+      "module": "detect",
+      "description": "M-address with valid base32 chars but both checksum bytes corrupted must be rejected",
+      "input": {
+        "address": "MBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OAAAAAAAAAAAPOGYZ"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "M-address (SEP-23 muxed) with the last two characters changed to other valid base32 characters (VY→YZ). The address is otherwise correctly formed. Implementations must verify CRC16 and reject this."
+    },
+    {
+      "module": "detect",
+      "description": "C-address with valid base32 chars but both checksum bytes corrupted must be rejected",
+      "input": {
+        "address": "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC557"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "Contract address with the last two characters changed to other valid base32 characters (26→57). The address is otherwise correctly formed. Implementations must verify CRC16 and reject this."
+    },
+    {
+      "module": "detect",
+      "description": "G-address with payload bytes altered (non-checksum) must be rejected due to checksum mismatch",
+      "input": {
+        "address": "GIRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H"
+      },
+      "expected": {
+        "kind": "invalid"
+      },
+      "tags": ["negative", "edge"],
+      "notes": "Second character changed from B to I — both are valid base32. The original checksum is now incorrect for the modified payload. This tests that implementations validate the CRC against the full payload, not just the type byte."
     }
   ]
 }

@@ -38,39 +38,43 @@ export type ExtractRoutingFromURIResult =
     };
 
 /**
- * Query keys whose values must never appear in error messages or logs.
- * SEP-0007 `signature`/`callback` can carry secrets; `memo`/`msg` can
- * carry personal data.
+ * Sensitive query parameter keys that must be redacted in error messages and logs.
+ * SEP-0007 `signature`/`callback` can carry secrets; `memo`/`msg` can carry personal data.
  */
-const SENSITIVE_QUERY_KEYS = new Set(["signature", "callback", "memo", "msg"]);
-
-const REDACTED = "[REDACTED]";
+const SENSITIVE_PARAM_KEYS = new Set(["signature", "callback", "memo", "msg"]);
 
 /**
- * Return a log-safe copy of a SEP-0007 URI with sensitive query values
- * redacted. Unknown/unparseable input is returned unchanged when it holds
- * no query string, otherwise with its values redacted.
+ * Return a log-safe copy of a SEP-0007 URI with sensitive query values redacted.
+ * Unknown/unparseable input is returned unchanged when it holds no query string;
+ * otherwise its sensitive values are replaced with [REDACTED].
  *
- * Use this whenever a URI (or a string derived from one) ends up in an
- * error description or log line.
+ * Use this whenever a URI (or a string derived from one) ends up in an error
+ * description or log line.
  */
-export function sanitizeSep7UriForLogging(uriString: string): string {
-  const queryIndex = uriString.indexOf("?");
-  if (queryIndex === -1) return uriString;
-  const prefix = uriString.slice(0, queryIndex + 1);
-  const query = uriString.slice(queryIndex + 1);
-  const redacted = query
-    .split("&")
-    .map((pair) => {
-      const eq = pair.indexOf("=");
-      const key = eq === -1 ? pair : pair.slice(0, eq);
-      if (SENSITIVE_QUERY_KEYS.has(key.toLowerCase())) {
-        return `${key}=${REDACTED}`;
-      }
-      return pair;
-    })
-    .join("&");
-  return prefix + redacted;
+export function sanitizeSep7UriForLogging(uriOrText: string): string {
+  if (!uriOrText) return uriOrText;
+
+  const qIndex = uriOrText.indexOf("?");
+  if (qIndex === -1 && !uriOrText.includes("=")) {
+    return uriOrText;
+  }
+
+  const prefix = qIndex !== -1 ? uriOrText.slice(0, qIndex + 1) : "";
+  const query = qIndex !== -1 ? uriOrText.slice(qIndex + 1) : uriOrText;
+
+  const pairs = query.split("&");
+  const sanitizedPairs = pairs.map((pair) => {
+    const eqIndex = pair.indexOf("=");
+    if (eqIndex === -1) return pair;
+    const key = pair.slice(0, eqIndex);
+    const lowerKey = key.toLowerCase();
+    if (SENSITIVE_PARAM_KEYS.has(lowerKey)) {
+      return `${key}=[REDACTED]`;
+    }
+    return pair;
+  });
+
+  return `${prefix}${sanitizedPairs.join("&")}`;
 }
 
 /**
@@ -118,46 +122,6 @@ function mapMemoType(sep7MemoType: string | undefined): RoutingInput["memoType"]
  * }
  * ```
  */
-/**
- * Sensitive query parameter keys that must be redacted in error messages and logs.
- */
-const SENSITIVE_PARAM_KEYS = new Set([
-  "signature",
-  "callback",
-  "memo",
-  "msg",
-]);
-
-/**
- * Sanitizes a URI or query string for logging and error descriptions
- * by redacting sensitive parameters (signature, callback, memo, msg).
- */
-export function sanitizeSep7UriForLogging(uriOrText: string): string {
-  if (!uriOrText) return uriOrText;
-
-  const qIndex = uriOrText.indexOf("?");
-  if (qIndex === -1 && !uriOrText.includes("=")) {
-    return uriOrText;
-  }
-
-  const prefix = qIndex !== -1 ? uriOrText.slice(0, qIndex + 1) : "";
-  const query = qIndex !== -1 ? uriOrText.slice(qIndex + 1) : uriOrText;
-
-  const pairs = query.split("&");
-  const sanitizedPairs = pairs.map((pair) => {
-    const eqIndex = pair.indexOf("=");
-    if (eqIndex === -1) return pair;
-    const key = pair.slice(0, eqIndex);
-    const lowerKey = key.toLowerCase();
-    if (SENSITIVE_PARAM_KEYS.has(lowerKey)) {
-      return `${key}=[REDACTED]`;
-    }
-    return pair;
-  });
-
-  return `${prefix}${sanitizedPairs.join("&")}`;
-}
-
 export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIResult {
   // 1. Validate scheme
   if (!uriString.startsWith("web+stellar:")) {
@@ -178,7 +142,6 @@ export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIR
   // The operation is URI-derived text, so it passes through the query
   // sanitizer before reaching the error description.
   if (operation !== "pay") {
-    const sanitizedOp = sanitizeSep7UriForLogging(operation);
     return {
       success: false,
       error: `Unsupported operation: '${sanitizeSep7UriForLogging(operation)}'. Only 'pay' is supported for routing extraction.`,
