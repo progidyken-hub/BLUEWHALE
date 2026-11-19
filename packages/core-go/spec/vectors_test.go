@@ -95,6 +95,11 @@ func TestVectors(t *testing.T) {
 		name := vectorTestName(i, tc)
 
 		t.Run(name, func(t *testing.T) {
+			// Distribute vector cases across all CPU cores. Each case captures
+			// its own `tc` (above) and operates on the shared, read-only decoded
+			// vectors, so the subtests are safe to run in parallel under
+			// GOMAXPROCS.
+			t.Parallel()
 			t.Logf("vector=%s", name)
 
 			switch tc.Module {
