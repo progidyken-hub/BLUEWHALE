@@ -8,6 +8,7 @@ export * from "./muxed/decode";
 export * from "./routing/extract";
 export * from "./routing/extractFromTx";
 export * from "./routing/extractFromURI";  // ← NEW
+export { internAssetCode, internAssetIssuer } from "./routing/assetIntern";
 export * from "./routing/types";
 export * from "./routing/safeRoutingId";
 export * from "./routing/memo";

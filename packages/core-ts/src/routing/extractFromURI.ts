@@ -9,6 +9,7 @@
  */
 
 import { extractRouting } from "./extract";
+import { internAssetCode, internAssetIssuer } from "./assetIntern";
 import type { RoutingInput, RoutingResult } from "./types";
 
 export interface SEP7PayParams {
@@ -172,12 +173,15 @@ export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIR
     };
   }
 
-  // 6. Extract optional parameters with safe decoding
+  // 6. Extract optional parameters with safe decoding.
+  //    Asset codes and issuer addresses are routed through the intern table so
+  //    repeated values (the same USDC issuer seen on every payment) share a
+  //    single string reference rather than allocating a new one each time.
   const rawParams: SEP7PayParams = {
     destination: safelyDecode(destination.trim()),
     amount: safelyDecode(params.get("amount")),
-    assetCode: safelyDecode(params.get("asset_code")),
-    assetIssuer: safelyDecode(params.get("asset_issuer")),
+    assetCode: internAssetCode(safelyDecode(params.get("asset_code"))),
+    assetIssuer: internAssetIssuer(safelyDecode(params.get("asset_issuer"))),
     memo: safelyDecode(params.get("memo")),
     memoType: safelyDecode(params.get("memo_type")),
     callback: safelyDecode(params.get("callback")),
