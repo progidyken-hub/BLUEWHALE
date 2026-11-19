@@ -208,16 +208,16 @@ func extractRouting(input RoutingInput) RoutingResult {
 // cancellation and deadline propagation.
 type MemoRequirementFetcher func(baseAccount string) (bool, error)
 
-// ExtractRoutingWithMemoRequirement performs normal routing extraction and
-// optionally adds the SEP-0029 error when a classic destination requires a
-// memo but no routing ID was supplied. Fetch failures fail open so callers
-// retain the result of the synchronous parser.
-//
-// The ctx parameter is accepted for API consistency with context-aware
-// call chains (e.g. future fetcher implementations backed by Horizon or an
-// indexer); the current implementation performs no cancellable work and
-// does not use it.
-func ExtractRoutingWithMemoRequirement(ctx context.Context, input RoutingInput, fetch MemoRequirementFetcher) RoutingResult {
+// ContextMemoRequirementFetcher is the context-aware variant of
+// [MemoRequirementFetcher]. Implementations can use Horizon, an indexer, or a
+// cached source, and should respect ctx for cancellation and deadlines.
+type ContextMemoRequirementFetcher func(ctx context.Context, baseAccount string) (bool, error)
+
+// ExtractRoutingWithContext performs normal routing extraction and optionally
+// adds the SEP-0029 error when a classic destination requires a memo but no
+// routing ID was supplied. Fetch failures fail open so callers retain the
+// result of the synchronous parser.
+func ExtractRoutingWithContext(ctx context.Context, input RoutingInput, fetch ContextMemoRequirementFetcher) RoutingResult {
 	result := ExtractRouting(input)
 	if fetch == nil || result.DestinationBaseAccount == "" || result.RoutingID != nil || result.DestinationError != nil {
 		return result
