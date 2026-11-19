@@ -1,0 +1,71 @@
+name: ci-go-compat
+
+# Validates that packages/core-go compiles and all tests pass on every
+# supported Go toolchain version (1.21, 1.22, 1.23). This matrix must remain
+# green before any change is merged to guarantee cross-version compatibility.
+#
+# The matrix is intentionally separate from ci-go.yml so the compatibility
+# signal is visible at a glance in the GitHub checks panel and can be required
+# independently as a branch-protection rule.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/core-go/**"
+      - ".github/workflows/ci-go-compat.yml"
+  pull_request:
+    paths:
+      - "packages/core-go/**"
+      - ".github/workflows/ci-go-compat.yml"
+
+jobs:
+  go-compat:
+    name: Go ${{ matrix.go-version }} compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version:
+          - "1.21"
+          - "1.22"
+          - "1.23"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Display Go version
+        run: go version
+
+      - name: Verify module graph (no unintended external dependencies)
+        working-directory: packages/core-go
+        env:
+          GOTOOLCHAIN: auto
+        run: |
+          echo "Module: $(go list -m)"
+          go mod verify
+
+      - name: Build (vet + compile check)
+        working-directory: packages/core-go
+        env:
+          GOTOOLCHAIN: auto
+        run: go build ./...
+
+      - name: Run tests
+        working-directory: packages/core-go
+        env:
+          GOTOOLCHAIN: auto
+        run: go test -v -count=1 ./...
+
+      - name: Run tests with race detector
+        working-directory: packages/core-go
+        env:
+          GOTOOLCHAIN: auto
+        run: go test -race -count=1 ./...

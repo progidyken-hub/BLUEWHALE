@@ -51,6 +51,15 @@ func fitsUint64(s string) bool {
 // strict 28-byte limit (counting UTF-8 bytes via len(s), not runes) before any
 // numeric parsing is attempted, returning ErrMemoTooLong for oversized inputs.
 func NormalizeMemoText(s string) (string, error) {
+	return normalizeMemo(s)
+}
+
+// normalizeMemo is the internal implementation of MEMO_TEXT validation.
+// It enforces the 28-byte limit by counting raw UTF-8 bytes, not Unicode
+// code points, matching the Stellar protocol byte-length rule. High Unicode
+// code points encoded as multi-byte UTF-8 sequences are therefore subject to
+// the same byte budget as ASCII characters.
+func normalizeMemo(s string) (string, error) {
 	if len(s) > maxMemoTextBytes {
 		return "", ErrMemoTooLong
 	}
