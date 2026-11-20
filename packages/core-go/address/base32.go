@@ -1,32 +1,14 @@
 package address
 
+import "github.com/REDISHFISH/BLUEWHALE/packages/core-go/strkey"
+
 // strkeyAlphabet is the RFC 4648 base32 alphabet used by every strkey.
-const strkeyAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-
-// invalidBase32 marks bytes outside the strkey alphabet in base32DecodeMap.
-const invalidBase32 = 0xff
-
-// base32DecodeMap maps an input byte to its 5-bit value. Lowercase letters
-// decode like their uppercase forms, matching DecodeStrKey's
-// case-insensitivity without an uppercased copy of the input.
-var base32DecodeMap = func() (m [256]byte) {
-	for i := range m {
-		m[i] = invalidBase32
-	}
-	for i := 0; i < len(strkeyAlphabet); i++ {
-		c := strkeyAlphabet[i]
-		m[c] = byte(i)
-		if c >= 'A' && c <= 'Z' {
-			m[c+('a'-'A')] = byte(i)
-		}
-	}
-	return m
-}()
+const strkeyAlphabet = strkey.Alphabet
 
 // DecodedStrKeyLen returns the number of raw bytes (version byte, payload and
 // checksum) that a strkey of encodedLen characters decodes to.
 func DecodedStrKeyLen(encodedLen int) int {
-	return encodedLen * 5 / 8
+	return strkey.DecodedLen(encodedLen)
 }
 
 // DecodeStrKeyInto is DecodeStrKey for callers that supply the decoding
@@ -59,31 +41,14 @@ func DecodeStrKeyInto(dst []byte, address string) (versionByte byte, payload []b
 		return 0, nil, errInvalidLength
 	}
 
-	// Accumulate 5 bits per character and emit a byte whenever 8 are
-	// available. Only the low bits of acc are ever read, so older bits are
-	// allowed to shift out.
-	var acc uint32
-	var bits uint
-	n := 0
-	for i := 0; i < len(address); i++ {
-		v := base32DecodeMap[address[i]]
-		if v == invalidBase32 {
-			return 0, nil, errInvalidBase32
-		}
-		acc = acc<<5 | uint32(v)
-		bits += 5
-		if bits >= 8 {
-			bits -= 8
-			dst[n] = byte(acc >> bits)
-			n++
-		}
-	}
-
-	// Unpadded base32 leaves 0-4 spare bits. Five or more means the length
-	// is 1, 3 or 6 modulo 8, which no byte string encodes to; spare bits that
-	// are set would not survive a re-encode. encoding/base32 rejects both,
-	// and so does the round-trip check in DecodeStrKey.
-	if bits >= 5 || acc&(1<<bits-1) != 0 {
+	// strkey.Decode converts 8 characters to 5 bytes per unrolled step. It
+	// rejects non-alphabet bytes, lengths of 1, 3 or 6 modulo 8 (which no
+	// byte string encodes to) and set spare bits (which would not survive a
+	// re-encode); encoding/base32 and the round-trip check in DecodeStrKey
+	// reject the same inputs. dst is long enough, so every error is a
+	// base32 error.
+	n, err := strkey.Decode(dst, address)
+	if err != nil {
 		return 0, nil, errInvalidBase32
 	}
 
