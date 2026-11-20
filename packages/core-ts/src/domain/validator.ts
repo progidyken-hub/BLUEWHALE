@@ -1,3 +1,5 @@
+import { RFC1035_LABEL } from "../patterns";
+
 /**
  * RFC 1035 Domain Name Validator.
  *
@@ -39,7 +41,6 @@ export interface DomainValidationResult {
     | "MISSING_TLD";
 }
 
-const RFC1035_LABEL_REGEX = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
 const MAX_DOMAIN_LENGTH = 253;
 const MAX_LABEL_LENGTH = 63;
 
@@ -139,7 +140,7 @@ export function validateDomain(
       };
     }
 
-    if (!RFC1035_LABEL_REGEX.test(label)) {
+    if (!RFC1035_LABEL.test(label)) {
       return {
         valid: false,
         error: `Label "${label}" contains invalid characters; only ASCII alphanumeric and hyphens are permitted`,

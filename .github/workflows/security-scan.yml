@@ -4,8 +4,14 @@ on:
   schedule:
     # Run every Monday at 08:00 UTC
     - cron: '0 8 * * 1'
+  push:
+    branches: [main]
   pull_request:
     paths:
+      # Source code and rules, so SAST (Semgrep) runs on every code change.
+      - 'packages/**'
+      - '.semgrep.yml'
+      # Dependency manifests, for the audit jobs.
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'packages/core-go/go.mod'
@@ -116,12 +122,48 @@ jobs:
   semgrep-scan:
     name: semgrep static analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    container:
+      image: semgrep/semgrep:latest
     steps:
       - uses: actions/checkout@v7
-      - name: Run Semgrep
+
+      # OWASP Top 10 registry pack plus language packs plus the project
+      # rules in .semgrep.yml (insecure randomness, unchecked returns,
+      # timing-unsafe comparisons, Stellar address validation).
+      # --error fails the job on any finding.
+      - name: Run Semgrep (OWASP Top 10 + Bluewhale rules)
         run: |
-          python3 -m pip install semgrep
-          semgrep scan --config=auto --error
+          semgrep scan \
+            --config p/owasp-top-ten \
+            --config p/typescript \
+            --config p/golang \
+            --config .semgrep.yml \
+            --metrics=off \
+            --sarif --output semgrep.sarif \
+            --error \
+            packages/
+
+      - name: Print findings
+        if: failure()
+        run: |
+          semgrep scan \
+            --config p/owasp-top-ten \
+            --config p/typescript \
+            --config p/golang \
+            --config .semgrep.yml \
+            --metrics=off \
+            packages/
+
+      - name: Upload SARIF to code scanning
+        if: always() && hashFiles('semgrep.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+        continue-on-error: true
 
   codeql-scan:
     name: codeql static analysis
@@ -146,7 +188,9 @@ jobs:
   security-gate:
     name: security gate
     runs-on: ubuntu-latest
-    needs: [audit-npm, audit-go, audit-rust-prism, audit-rust-fuzzer, semgrep-scan, codeql-scan]
+    # Every job whose result is checked below must be listed here, or its
+    # result reads as empty and the gate always fails.
+    needs: [secret-scan, audit-npm, audit-go, audit-dart, audit-rust-prism, audit-rust-fuzzer, semgrep-scan, codeql-scan]
     if: always()
     steps:
       - name: Enforce all audits passed
@@ -161,6 +205,7 @@ jobs:
           needs.codeql-scan.result != 'success'
         run: |
           echo "::error::Security scan failed — at least one audit or static analysis failed."
+          echo "::error::gitleaks:           ${{ needs.secret-scan.result }}"
           echo "::error::npm audit:          ${{ needs.audit-npm.result }}"
           echo "::error::govulncheck go:     ${{ needs.audit-go.result }}"
           echo "::error::dart audit:         ${{ needs.audit-dart.result }}"

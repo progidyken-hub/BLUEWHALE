@@ -1,13 +1,299 @@
+# Bluewhale custom Semgrep rules.
+#
+# These rules are the project-specific layer on top of the OWASP Top 10
+# registry ruleset. CI runs them together (see
+# .github/workflows/security-scan.yml):
+#
+#   semgrep scan --config p/owasp-top-ten --config p/typescript \
+#                --config p/golang --config .semgrep.yml --error
+#
+# Semgrep config files can't import registry packs, so the OWASP Top 10 pack
+# is passed with --config at scan time. Every rule here is tagged with the
+# OWASP 2021 category and CWE it maps to, so findings group with the registry
+# results.
+#
+# Run locally:
+#   pip install semgrep
+#   semgrep scan --config .semgrep.yml --error
+#
+# To suppress a reviewed false positive, add a trailing comment with a
+# justification:  // nosemgrep: <rule-id> -- <reason>
+
 rules:
-  - id: bluewhale-no-unsanitized-terminal-escape
-    patterns:
-      - pattern: console.error($MSG)
-    message: "Ensure user-supplied address strings are sanitized against ANSI escape injection before logging."
+  # ─── Insecure randomness (CWE-338) ────────────────────────────────────────
+  - id: bluewhale-insecure-random-ts
+    message: >-
+      Math.random() is not cryptographically secure. Use
+      crypto.getRandomValues() (or crypto.randomUUID()) for anything that
+      ends up in keys, seeds, nonces, memo IDs or test vectors that model
+      real secrets.
     languages: [typescript, javascript]
-    severity: WARNING
+    severity: ERROR
+    pattern: Math.random()
+    paths:
+      exclude:
+        # Dev-only tooling (e.g. the differential fuzzer's reproducible seed).
+        - "scripts/**"
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "**/*.stories.tsx"
+    metadata:
+      category: security
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      cwe:
+        - "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+      confidence: HIGH
+
+  - id: bluewhale-insecure-random-go
+    message: >-
+      math/rand is not cryptographically secure. Use crypto/rand for any
+      value that must be unpredictable.
+    languages: [go]
+    severity: ERROR
+    pattern-either:
+      - pattern: import "math/rand"
+      - pattern: import "math/rand/v2"
+    paths:
+      exclude:
+        - "**/*_test.go"
+    metadata:
+      category: security
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      cwe:
+        - "CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)"
+      confidence: HIGH
+
+  # ─── Timing-unsafe comparisons (CWE-208) ──────────────────────────────────
+  - id: bluewhale-timing-unsafe-compare-ts
+    message: >-
+      '$X' looks like secret material and is compared with a short-circuiting
+      operator, which leaks timing information. Use a constant-time
+      comparison (e.g. crypto.timingSafeEqual, or constantTimeEqual16 from
+      src/address/detect.ts for 16-bit values).
+    languages: [typescript, javascript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: $X === $Y
+          - pattern: $X !== $Y
+          - pattern: $X == $Y
+          - pattern: $X != $Y
+          - pattern: $X.equals($Y)
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i)^[\w.]*(secret|seed|signature|hmac|mac|token|password|privatekey|digest)$
+      # Comparing against null/undefined/literals is a presence check, not a
+      # secret comparison.
+      - pattern-not: $X === undefined
+      - pattern-not: $X !== undefined
+      - pattern-not: $X === null
+      - pattern-not: $X !== null
+      - pattern-not: $X == null
+      - pattern-not: $X != null
+      - pattern-not: $X === "..."
+      - pattern-not: $X !== "..."
+    metadata:
+      category: security
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      cwe:
+        - "CWE-208: Observable Timing Discrepancy"
+      confidence: MEDIUM
+
+  - id: bluewhale-timing-unsafe-compare-go
+    message: >-
+      bytes.Equal / == short-circuits on the first differing byte. Use
+      crypto/subtle.ConstantTimeCompare for checksums, signatures, MACs and
+      key material.
+    languages: [go]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: bytes.Equal($X, $Y)
+          - pattern: string($X) == string($Y)
+      - metavariable-regex:
+          metavariable: $X
+          regex: (?i)(secret|seed|signature|hmac|mac|token|password|privatekey|digest|checksum|crc)
+    metadata:
+      category: security
+      owasp:
+        - "A02:2021 - Cryptographic Failures"
+      cwe:
+        - "CWE-208: Observable Timing Discrepancy"
+      confidence: MEDIUM
+
+  # ─── Unchecked return values (CWE-252) ────────────────────────────────────
+  - id: bluewhale-unchecked-validation-result-ts
+    message: >-
+      The result of '$F' is discarded. A validation or verification call whose
+      return value is ignored doesn't validate anything. Branch on the result
+      or use a throwing variant.
+    languages: [typescript, javascript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: $F(...);
+          - pattern: await $F(...);
+      - metavariable-regex:
+          metavariable: $F
+          regex: ^([\w.]+\.)?(isValid\w*|validate\w*|verify\w*|detect)$
+      # Semgrep also matches the call when it is nested inside a larger
+      # expression, so exclude every position where the result is consumed.
+      - pattern-not-inside: $V = $E
+      - pattern-not-inside: const $V = $E;
+      - pattern-not-inside: let $V = $E;
+      - pattern-not-inside: var $V = $E;
+      - pattern-not-inside: return $E;
+      - pattern-not-inside: $G(..., <... $F(...) ...>, ...);
+      - pattern-not-inside: if (<... $F(...) ...>) $S
+      - pattern-not-inside: while (<... $F(...) ...>) $S
+      - pattern-not-inside: $A && $B
+      - pattern-not-inside: $A || $B
+      - pattern-not-inside: "!$X"
+      - pattern-not-inside: "$C ? $T : $E"
+      - pattern-not-inside: "() => $E"
+    paths:
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "**/*.bench.ts"
+    metadata:
+      category: security
+      owasp:
+        - "A04:2021 - Insecure Design"
+      cwe:
+        - "CWE-252: Unchecked Return Value"
+      confidence: HIGH
+
+  - id: bluewhale-unchecked-error-go
+    message: >-
+      The error returned by '$F' is discarded with '_'. A decode, parse or
+      verify error that is ignored lets malformed or forged input through.
+    languages: [go]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: $V, _ := $F(...)
+          - pattern: $V, _ = $F(...)
+          - pattern: _ = $F(...)
+          - pattern: $V, $W, _ := $F(...)
+          - pattern: $V, _ := $PKG.$F(...)
+          - pattern: $V, _ = $PKG.$F(...)
+          - pattern: _ = $PKG.$F(...)
+          - pattern: $V, $W, _ := $PKG.$F(...)
+      - metavariable-regex:
+          metavariable: $F
+          regex: (?i)(decode|parse|verify|validate|unmarshal)
+    paths:
+      exclude:
+        - "**/*_test.go"
+    metadata:
+      category: security
+      owasp:
+        - "A04:2021 - Insecure Design"
+      cwe:
+        - "CWE-252: Unchecked Return Value"
+      confidence: HIGH
+
+  # ─── Stellar address validation ───────────────────────────────────────────
+  - id: bluewhale-stellar-address-regex-validation
+    message: >-
+      This regex checks only the shape of a Stellar StrKey, not its
+      version byte or CRC16 checksum, so a typo'd address passes. Validate
+      with detect()/parse() from @redishfish/bluewhale-core (or StrKey.isValid*
+      / the core-go address package) instead.
+    languages: [typescript, javascript, go]
+    severity: ERROR
+    # Matches patterns such as ^G[A-Z2-7]{55}$, [GMC][A-Z2-7]{55}, M[A-Z2-7]{68}
+    pattern-regex: \[?[GMCS]{1,4}\]?\[A-Z2-7\]\{(55|68|69)\}
+    paths:
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "**/*_test.go"
     metadata:
       category: security
       owasp:
         - "A03:2021 - Injection"
+        - "A08:2021 - Software and Data Integrity Failures"
+      cwe:
+        - "CWE-20: Improper Input Validation"
+      confidence: HIGH
+
+  - id: bluewhale-stellar-prefix-length-validation
+    message: >-
+      Checking a Stellar address by prefix and length alone skips the
+      base32 decode, version byte and CRC16 checksum. Use detect()/parse()
+      instead.
+    languages: [typescript, javascript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: $A.startsWith("$P") && $A.length === $N
+          - pattern: $A.length === $N && $A.startsWith("$P")
+          - pattern: $A[0] === "$P" && $A.length === $N
+          - pattern: $A.length === $N && $A[0] === "$P"
+      - metavariable-regex:
+          metavariable: $P
+          regex: ^[GMCS]$
+      - metavariable-regex:
+          metavariable: $N
+          regex: ^(56|69)$
+    metadata:
+      category: security
+      owasp:
+        - "A08:2021 - Software and Data Integrity Failures"
+      cwe:
+        - "CWE-20: Improper Input Validation"
+      confidence: HIGH
+
+  - id: bluewhale-stellar-secret-seed-logged
+    message: >-
+      '$S' looks like a Stellar secret seed (S...) or private key and is
+      being logged. Seeds must never reach logs, error messages or telemetry.
+    languages: [typescript, javascript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: console.$LOG(..., $S, ...)
+          - pattern: console.$LOG(..., `...${$S}...`, ...)
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?i)(secret|seed|privatekey|private_key|keypair\.secret)
+    metadata:
+      category: security
+      owasp:
+        - "A09:2021 - Security Logging and Monitoring Failures"
+      cwe:
+        - "CWE-532: Insertion of Sensitive Information into Log File"
+      confidence: MEDIUM
+
+  # ─── Log injection (CWE-117) ──────────────────────────────────────────────
+  - id: bluewhale-no-unsanitized-terminal-escape
+    message: >-
+      '$E.input' is the raw, user-supplied address string. Logging it
+      directly allows ANSI escape and control-character injection into
+      terminals and log files. Wrap it in sanitizeErrorMessage() first.
+    languages: [typescript, javascript]
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: console.$LOG(..., $E.input, ...)
+          - pattern: console.$LOG(..., `...${$E.input}...`, ...)
+          - pattern: console.$LOG(..., <... $E.input ...>, ...)
+      - pattern-not: console.$LOG(..., sanitizeErrorMessage(...), ...)
+      - pattern-not: console.$LOG(..., `...${sanitizeErrorMessage(...)}...`, ...)
+    paths:
+      exclude:
+        # The differential fuzzer prints mutated inputs on purpose to reproduce failures.
+        - "scripts/**"
+    metadata:
+      category: security
+      owasp:
+        - "A03:2021 - Injection"
+        - "A09:2021 - Security Logging and Monitoring Failures"
       cwe:
         - "CWE-117: Improper Output Neutralization for Logs"
+      confidence: MEDIUM

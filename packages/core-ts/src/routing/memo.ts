@@ -1,4 +1,5 @@
 import { Warning } from "../address/types";
+import { DIGITS_ONLY, LEADING_ZEROS } from "../patterns";
 
 export type NormalizeResult = {
   normalized: string | null;
@@ -20,11 +21,11 @@ const UINT64_MAX = BigInt("18446744073709551615");
 export function normalizeMemoTextId(s: string): NormalizeResult {
   const warnings: Warning[] = [];
 
-  if (s.length === 0 || !/^\d+$/.test(s)) {
+  if (s.length === 0 || !DIGITS_ONLY.test(s)) {
     return { normalized: null, warnings };
   }
 
-  let normalized = s.replace(/^0+/, "");
+  let normalized = s.replace(LEADING_ZEROS, "");
   if (normalized === "") {
     normalized = "0";
   }
@@ -43,7 +44,7 @@ export function normalizeMemoTextId(s: string): NormalizeResult {
   // Unreachable today (`s` was checked above and only zeros were stripped);
   // kept as a guard in case that check changes. Excluded from coverage.
   /* v8 ignore next 3 */
-  if (!/^\d+$/.test(normalized)) {
+  if (!DIGITS_ONLY.test(normalized)) {
     return { normalized: null, warnings };
   }
 

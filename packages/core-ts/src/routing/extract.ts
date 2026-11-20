@@ -5,6 +5,7 @@ import { detect } from "../address/detect";
 import { AddressParseError } from "../address/errors";
 import { normalizeMemoTextId } from "./memo";
 import { withRoutingResultJSON } from "./result";
+import { DIGITS_ONLY } from "../patterns";
 
 /**
  * Numeric weight of each warning severity. This ordering is normative and is
@@ -175,7 +176,7 @@ function extractRoutingResult(input: RoutingInput): RoutingResult {
 
     if (
       input.memoType === "id" ||
-      (input.memoType === "text" && /^\d+$/.test(input.memoValue ?? ""))
+      (input.memoType === "text" && DIGITS_ONLY.test(input.memoValue ?? ""))
     ) {
       warnings.push({
         code: "MEMO_PRESENT_WITH_MUXED",

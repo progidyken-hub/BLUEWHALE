@@ -1,3 +1,5 @@
+import { ANSI_ESCAPE_G, CONTROL_CHARS_G } from "../patterns";
+
 export type ErrorCode =
   | "INVALID_CHECKSUM"
   | "INVALID_LENGTH"
@@ -14,8 +16,8 @@ export type ErrorCode =
  */
 export function sanitizeErrorMessage(msg: string): string {
   return msg
-    .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "")
-    .replace(/[\x00-\x08\x0B-\x1F\x7F-\x9F]/g, "");
+    .replace(ANSI_ESCAPE_G, "")
+    .replace(CONTROL_CHARS_G, "");
 }
 
 /**
