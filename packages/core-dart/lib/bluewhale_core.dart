@@ -18,7 +18,8 @@
 /// ## Public API
 ///
 /// - **Addresses:** [detect], [validate], [parse], [StellarAddress],
-///   [AddressKind], [ParseResult], [AddressError].
+///   [AddressKind], [ParseResult], [AddressError], [decodeStrKey],
+///   [StrKeyDecodeResult].
 /// - **Muxed accounts:** [MuxedAddress], [DecodedMuxedAddress], and the
 ///   low-level [MuxedEncoder] / [MuxedDecoder].
 /// - **Routing:** [extractRouting], [extractRoutingAsync], [extractRoutingSync], [RoutingInput],
@@ -35,6 +36,7 @@ export 'src/address/codes.dart';
 export 'src/address/detect.dart';
 export 'src/address/parse.dart';
 export 'src/address/stellar_address.dart';
+export 'src/address/strkey_decode.dart';
 export 'src/address/validate.dart';
 
 // Muxed accounts

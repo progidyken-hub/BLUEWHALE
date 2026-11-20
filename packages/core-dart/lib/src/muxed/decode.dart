@@ -16,12 +16,19 @@ class MuxedDecoder {
   /// CRC-16 checksum is **not** verified here; call `detect` first when the
   /// input is untrusted.
   static DecodedMuxedAddress decodeMuxedString(String mAddress) {
+    // Reject truncated or over-long input before Base32 decoding, so a
+    // short string never surfaces as a FormatException or a RangeError.
+    // See spec/vectors/truncated-addresses.json.
+    if (mAddress.length != 69) {
+      throw const StellarAddressException('Invalid muxed address length');
+    }
+
     final decoded = StrKeyUtil.decodeBase32(mAddress);
-    
+
     if (decoded.length != 43) {
       throw const StellarAddressException('Invalid muxed address length');
     }
-    
+
     if (decoded[0] != 0x60) {
       throw const StellarAddressException('Invalid muxed address prefix');
     }

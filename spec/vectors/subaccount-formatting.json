@@ -1,0 +1,253 @@
+{
+  "description": "Decimal formatting of uint64 muxed (subaccount) IDs. 'id_hex' is the big-endian 8-byte ID as stored in the M-address payload. Every implementation MUST format it as a plain base-10 string: no sign, no leading zeros (except \"0\"), no exponent/scientific notation, no grouping separators and no rounding. Reference formatters: JavaScript BigInt.prototype.toString(), Go strconv.FormatUint(v, 10), Dart BigInt.toString(). 'float64Hazard', when present, is what formatting the value through a 64-bit float produces (e.g. JavaScript Number(x).toString()) and is a known-wrong output that MUST NOT be returned.",
+  "module": "subaccount_format",
+  "cases": [
+    {
+      "description": "zero: smallest uint64",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "0000000000000000"
+      },
+      "expected": {
+        "decimal": "0",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "one",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "0000000000000001"
+      },
+      "expected": {
+        "decimal": "1",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAHOO2"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^32-1: max uint32",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "00000000ffffffff"
+      },
+      "expected": {
+        "decimal": "4294967295",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAP777774ZGI"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^32: first value needing more than 32 bits",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "0000000100000000"
+      },
+      "expected": {
+        "decimal": "4294967296",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAQAAAAACWFO"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^53-1: Number.MAX_SAFE_INTEGER",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "001fffffffffffff"
+      },
+      "expected": {
+        "decimal": "9007199254740991",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAA77777777776YNO"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^53+1: first odd value a float64 cannot represent (canary)",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "0020000000000001"
+      },
+      "expected": {
+        "decimal": "9007199254740993",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACABAAAAAAAAAAEVIG"
+      },
+      "float64Hazard": "9007199254740992",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "10^17: a float64 printed with Go %v or strconv %g renders as 1e+17",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "016345785d8a0000"
+      },
+      "expected": {
+        "decimal": "100000000000000000",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACALDIV4F3CQAAAVFO"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "10^18: a float64 printed with Go %v or strconv %g renders as 1e+18",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "0de0b6b3a7640000"
+      },
+      "expected": {
+        "decimal": "1000000000000000000",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACDPAW2Z2OZAAAAV7S"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^63-1: max int64; signed parsers stop here",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "7fffffffffffffff"
+      },
+      "expected": {
+        "decimal": "9223372036854775807",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAC7777777777776O2M"
+      },
+      "float64Hazard": "9223372036854776000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^63: min int64 when read as signed",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "8000000000000000"
+      },
+      "expected": {
+        "decimal": "9223372036854775808",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADAAAAAAAAAAAAB6AA"
+      },
+      "float64Hazard": "9223372036854776000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "10^19: round power of ten above int64",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "8ac7230489e80000"
+      },
+      "expected": {
+        "decimal": "10000000000000000000",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADCWHEMCIT2AAABQKW"
+      },
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^64-616: rounds to 2^64 as float64",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "fffffffffffffd98"
+      },
+      "expected": {
+        "decimal": "18446744073709551000",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD77777777775TA7SC"
+      },
+      "float64Hazard": "18446744073709552000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^64-3",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "fffffffffffffffd"
+      },
+      "expected": {
+        "decimal": "18446744073709551613",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD777777777777VPHW"
+      },
+      "float64Hazard": "18446744073709552000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^64-2",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "fffffffffffffffe"
+      },
+      "expected": {
+        "decimal": "18446744073709551614",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD777777777777Y6UW"
+      },
+      "float64Hazard": "18446744073709552000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    },
+    {
+      "description": "2^64-1: max uint64",
+      "input": {
+        "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "id_hex": "ffffffffffffffff"
+      },
+      "expected": {
+        "decimal": "18446744073709551615",
+        "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD7777777777774OFW"
+      },
+      "float64Hazard": "18446744073709552000",
+      "tags": [
+        "positive",
+        "edge",
+        "interop"
+      ]
+    }
+  ]
+}

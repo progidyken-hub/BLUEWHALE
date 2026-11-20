@@ -1,0 +1,460 @@
+{
+  "description": "Case sensitivity of G, M and C strkeys. StrKeys are uppercase RFC 4648 base32. A strict decoder MUST reject any lowercase character with INVALID_BASE32 unless the caller opts in with allowLowercase, in which case the input is normalized to uppercase, reported with normalized: true, and then subject to every other check (length, base32, checksum). Only ASCII a-z count as lowercase: case folding MUST be ASCII-only, so non-ASCII letters that uppercase to A-Z (e.g. U+017F) are INVALID_BASE32. Check order: prefix (UNKNOWN_PREFIX), lowercase (INVALID_BASE32), alphabet (INVALID_BASE32), length (INVALID_LENGTH), trailing bits (INVALID_BASE32), checksum (INVALID_CHECKSUM).",
+  "module": "strkey_decode",
+  "cases": [
+    {
+      "description": "G: canonical uppercase is accepted",
+      "input": {
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": true,
+        "kind": "G",
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "G: canonical uppercase is accepted unchanged with allowLowercase",
+      "input": {
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "G",
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "G: fully lowercase 'g...' is rejected by default",
+      "input": {
+        "address": "gaycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrsi",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "G: fully lowercase 'g...' is normalized with allowLowercase",
+      "input": {
+        "address": "gaycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrsi",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "G",
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "G: lowercase prefix only is rejected by default",
+      "input": {
+        "address": "gAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "G: only the last letter lowercase is rejected by default",
+      "input": {
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSi",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "G: alternating mixed case is rejected by default",
+      "input": {
+        "address": "GaYcUyT553C5LhVe2xPw5gMeJt4bXgM7AhMjWlApZp53KjO7EiQaDrSi",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "G: alternating mixed case is normalized with allowLowercase",
+      "input": {
+        "address": "GaYcUyT553C5LhVe2xPw5gMeJt4bXgM7AhMjWlApZp53KjO7EiQaDrSi",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "G",
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "M: canonical uppercase is accepted",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": true,
+        "kind": "M",
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "M: canonical uppercase is accepted unchanged with allowLowercase",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "M",
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "M: fully lowercase 'm...' is rejected by default",
+      "input": {
+        "address": "maycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqacaaaaaaaaaaaad672",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "M: fully lowercase 'm...' is normalized with allowLowercase",
+      "input": {
+        "address": "maycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqacaaaaaaaaaaaad672",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "M",
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "M: lowercase prefix only is rejected by default",
+      "input": {
+        "address": "mAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "M: only the last letter lowercase is rejected by default",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAd672",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "M: alternating mixed case is rejected by default",
+      "input": {
+        "address": "MaYcUyT553C5LhVe2xPw5gMeJt4bXgM7AhMjWlApZp53KjO7EiQaCaAaAaAaAaAaAd672",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "M: alternating mixed case is normalized with allowLowercase",
+      "input": {
+        "address": "MaYcUyT553C5LhVe2xPw5gMeJt4bXgM7AhMjWlApZp53KjO7EiQaCaAaAaAaAaAaAd672",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "M",
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "C: canonical uppercase is accepted",
+      "input": {
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": true,
+        "kind": "C",
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "C: canonical uppercase is accepted unchanged with allowLowercase",
+      "input": {
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "C",
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "normalized": false
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "C: fully lowercase 'c...' is rejected by default",
+      "input": {
+        "address": "cdlzfc3syjydzt7k67vz75hpjvieuvnixf47zg2fb2rmqqvu2hhgcysc",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "C: fully lowercase 'c...' is normalized with allowLowercase",
+      "input": {
+        "address": "cdlzfc3syjydzt7k67vz75hpjvieuvnixf47zg2fb2rmqqvu2hhgcysc",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "C",
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "C: lowercase prefix only is rejected by default",
+      "input": {
+        "address": "cDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "C: only the last letter lowercase is rejected by default",
+      "input": {
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSc",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "C: alternating mixed case is rejected by default",
+      "input": {
+        "address": "CdLzFc3sYjYdZt7k67Vz75HpJvIeUvNiXf47Zg2fB2RmQqVu2hHgCySc",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "C: alternating mixed case is normalized with allowLowercase",
+      "input": {
+        "address": "CdLzFc3sYjYdZt7k67Vz75HpJvIeUvNiXf47Zg2fB2RmQqVu2hHgCySc",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": true,
+        "kind": "C",
+        "address": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        "normalized": true
+      },
+      "tags": [
+        "positive",
+        "case"
+      ]
+    },
+    {
+      "description": "lowercase G with a corrupted checksum still fails the checksum with allowLowercase",
+      "input": {
+        "address": "gaycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrsa",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_CHECKSUM"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "lowercase truncated M still fails the length check with allowLowercase",
+      "input": {
+        "address": "maycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlap",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    },
+    {
+      "description": "U+017F LATIN SMALL LETTER LONG S (uppercases to 'S') is not accepted as a lowercase letter, even with allowLowercase",
+      "input": {
+        "address": "gaycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrſi",
+        "allowLowercase": true
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "case",
+        "unicode"
+      ]
+    },
+    {
+      "description": "non-ASCII character in an otherwise uppercase G-address is INVALID_BASE32, not INVALID_LENGTH",
+      "input": {
+        "address": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSÉ",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_BASE32"
+      },
+      "tags": [
+        "negative",
+        "unicode"
+      ]
+    },
+    {
+      "description": "lowercase seed-like 's...' prefix is UNKNOWN_PREFIX regardless of case handling",
+      "input": {
+        "address": "saycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrsi",
+        "allowLowercase": false
+      },
+      "expected": {
+        "ok": false,
+        "error": "UNKNOWN_PREFIX"
+      },
+      "tags": [
+        "negative",
+        "case"
+      ]
+    }
+  ]
+}

@@ -66,6 +66,27 @@ The suite includes vectors covering leading and trailing spaces, tabs, newlines,
 - `warnings[]` contains `NON_CANONICAL_ADDRESS`.
 - `destinationError` is absent.
 
+### Focused Vector Files (`spec/vectors/`)
+
+Alongside the master suite, `spec/vectors/` holds focused vector files that each package's test suite loads directly:
+
+| File | Covers |
+|------|--------|
+| `truncated-addresses.json` | M-addresses truncated to 10–68 characters MUST fail with `INVALID_LENGTH`, never panic or throw a range error. |
+| `subaccount-formatting.json` | uint64 muxed IDs up to 2^64-1 MUST format as plain decimal strings (`BigInt.toString()` / `strconv.FormatUint` / Dart `BigInt.toString()`), never through float64. |
+| `case-sensitivity.json` | Lowercase or mixed-case `g…`/`m…`/`c…` strkeys MUST be rejected with `INVALID_BASE32` by the strict decoder unless `allowLowercase` is set. |
+
+### Generating Vectors from Testnet
+
+`scripts/generate-vectors-from-horizon.js` builds anonymized `extract_routing` cases from live Stellar testnet payments:
+
+```bash
+node scripts/generate-vectors-from-horizon.js --count 25 --out spec/vectors/horizon-testnet.json
+node scripts/generate-vectors-from-horizon.js --self-test   # offline checks
+```
+
+Accounts, memo IDs, muxed IDs and memos are replaced deterministically (see `--salt`), so the output never contains real testnet data. By default only cases whose expected result follows directly from the spec are emitted; `--all` also emits memo/warning-dependent cases marked `UNVERIFIED` in `notes`, which must be completed before committing.
+
 ### Running Validation
 
 Before contributing logic changes, ensure the specification itself remains valid:

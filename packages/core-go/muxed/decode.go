@@ -92,6 +92,17 @@ func decodeMuxedPooled(mAddress string) (pubkey [32]byte, id uint64, ok bool) {
 // decodeMuxedChecked decodes mAddress through address.DecodeStrKey and maps
 // each failure to an AddressError.
 func decodeMuxedChecked(mAddress string) (pubkey [32]byte, id uint64, err error) {
+	// An input that carries the M prefix but not the full 69 characters is
+	// truncated (or padded): report it as a length error before any base32
+	// or checksum work. See spec/vectors/truncated-addresses.json.
+	if len(mAddress) > 0 && (mAddress[0] == 'M' || mAddress[0] == 'm') && len(mAddress) != muxedEncodedLen {
+		return pubkey, 0, &AddressError{
+			Code:    ErrInvalidLength,
+			Input:   mAddress,
+			Message: "muxed address must be 69 characters",
+		}
+	}
+
 	versionByte, payload, err := address.DecodeStrKey(mAddress)
 	if err != nil {
 		return pubkey, 0, &AddressError{
