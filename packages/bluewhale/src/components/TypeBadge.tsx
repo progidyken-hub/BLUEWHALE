@@ -78,19 +78,27 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
 
   let backgroundColor = '#e2e8f0'; // default gray
   let color = '#1e293b';
+  let label = '';
+  let description = '';
 
   switch (type) {
     case 'M':
-      backgroundColor = '#d8b4fe'; // purple
-      color = '#581c87';
+      backgroundColor = '#bfdbfe';
+      color = '#1e3a8a';
+      label = 'Muxed';
+      description = 'A classic account with its routing ID encoded in the address.';
       break;
     case 'G':
-      backgroundColor = '#bfdbfe'; // blue
-      color = '#1e3a8a';
+      backgroundColor = '#bbf7d0';
+      color = '#166534';
+      label = 'Classic';
+      description = 'A standard Stellar account. A memo may be needed for routing.';
       break;
     case 'C':
-      backgroundColor = '#fdba74'; // orange
-      color = '#9a3412';
+      backgroundColor = '#e9d5ff';
+      color = '#6b21a8';
+      label = 'Contract';
+      description = 'A smart contract address, not a standard account payment destination.';
       break;
   }
 
@@ -99,8 +107,11 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
     .join(' ');
 
   return (
-    <div
+    <span
       className={rootClass}
+      role="img"
+      aria-label={`${label} address. ${description}`}
+      title={description}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -116,9 +127,8 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
         userSelect: 'none',
         ...style,
       }}
-      title={title}
     >
-      {type}
-    </div>
+      {label}
+    </span>
   );
 };

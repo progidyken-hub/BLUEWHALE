@@ -9,6 +9,19 @@ describe('TypeBadge', () => {
     const { container } = render(<TypeBadge type="UNKNOWN" />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it.each([
+    ['G', 'Classic', 'rgb(187, 247, 208)', /standard stellar account/i],
+    ['M', 'Muxed', 'rgb(191, 219, 254)', /routing ID encoded/i],
+    ['C', 'Contract', 'rgb(233, 213, 255)', /smart contract address/i],
+  ] as const)('describes the %s address type accessibly', (type, label, backgroundColor, description) => {
+    const { getByRole } = render(<TypeBadge type={type} />);
+    const badge = getByRole('img', { name: new RegExp(label) });
+
+    expect(badge).toHaveTextContent(label);
+    expect(badge.getAttribute('title')).toMatch(description);
+    expect((badge as HTMLElement).style.backgroundColor).toBe(backgroundColor);
+  });
 });
 
 describe('isHighRiskWarningCode', () => {

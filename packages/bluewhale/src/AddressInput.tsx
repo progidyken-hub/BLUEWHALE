@@ -329,8 +329,19 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       {/* Memo field (G-address only) */}
       <MemoField isVisible={showMemo && !!address} value={memo} onChange={setMemo} />
 
-      {/* Warnings */}
-      <WarningList warnings={warnings} />
+      {/* Keep feedback in a reserved slot so it does not move later fields. */}
+      <div
+        className="bw-address-input__feedback"
+        aria-hidden={warnings.length === 0}
+        style={{
+          minHeight: '6rem',
+          opacity: warnings.length > 0 ? 1 : 0,
+          transform: warnings.length > 0 ? 'translateY(0)' : 'translateY(-0.25rem)',
+          transition: 'opacity 0.18s ease, transform 0.18s ease',
+        }}
+      >
+        <WarningList warnings={warnings} />
+      </div>
 
       {/* Routing summary with optional copy buttons */}
       {type !== 'C' && address && (

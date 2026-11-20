@@ -192,6 +192,20 @@ describe('BEM class names on sub-components', () => {
     expect(container.querySelector('.bw-type-badge--g')).toBeInTheDocument();
   });
 
+  it('updates the address type badge when the input prefix changes', () => {
+    renderComponent();
+    const input = getAddressInput();
+
+    fireEvent.change(input, { target: { value: 'G' } });
+    expect(screen.getByRole('img', { name: /classic address/i })).toHaveTextContent('Classic');
+
+    fireEvent.change(input, { target: { value: 'M' } });
+    expect(screen.getByRole('img', { name: /muxed address/i })).toHaveTextContent('Muxed');
+
+    fireEvent.change(input, { target: { value: 'C' } });
+    expect(screen.getByRole('img', { name: /contract address/i })).toHaveTextContent('Contract');
+  });
+
   it('WarningList has bw-warning-list class and items have bw-warning-item', async () => {
     const { container } = renderComponent();
     await userEvent.type(getAddressInput(), 'C');
