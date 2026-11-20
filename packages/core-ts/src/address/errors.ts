@@ -33,4 +33,17 @@ export class AddressParseError extends Error {
     this.input = sanitizeErrorMessage(input);
     Object.setPrototypeOf(this, AddressParseError.prototype);
   }
+
+  /**
+   * Serializes the error to the canonical cross-SDK error message structure
+   * `{ code, input, message }` shared with core-go (`RoutingError`) and
+   * core-dart (`AddressError`).
+   */
+  toJSON(): { code: ErrorCode; input: string; message: string } {
+    return {
+      code: this.code,
+      input: this.input,
+      message: this.message,
+    };
+  }
 }

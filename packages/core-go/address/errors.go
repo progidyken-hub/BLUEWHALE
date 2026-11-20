@@ -14,11 +14,13 @@ const (
 	ErrFederationAddressNotSupported ErrorCode = "FEDERATION_ADDRESS_NOT_SUPPORTED"
 )
 
-// RoutingError is the main custom error type
+// RoutingError is the main custom error type. Its JSON fields (`code`,
+// `input`, `message`) match core-ts (`AddressParseError.toJSON()`) and
+// core-dart (`AddressError.toJson()`) byte-for-byte.
 type RoutingError struct {
-	Code    ErrorCode
-	Input   string
-	Message string
+	Code    ErrorCode `json:"code"`
+	Input   string    `json:"input"`
+	Message string    `json:"message"`
 }
 
 func (e RoutingError) Error() string {

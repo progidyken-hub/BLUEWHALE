@@ -32,4 +32,14 @@ describe("address error code taxonomy", () => {
       expect(new AddressParseError(code, "x", "m").code).toBe(code);
     }
   });
+
+  it("serializes AddressParseError to the canonical { code, input, message } structure", () => {
+    const err = new AddressParseError("INVALID_CHECKSUM", "GABC", "Invalid address checksum");
+    expect(err.toJSON()).toEqual({
+      code: "INVALID_CHECKSUM",
+      input: "GABC",
+      message: "Invalid address checksum",
+    });
+    expect(Object.keys(JSON.parse(JSON.stringify(err)))).toEqual(["code", "input", "message"]);
+  });
 });

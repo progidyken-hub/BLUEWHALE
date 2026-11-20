@@ -1,6 +1,9 @@
 package address
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 // Error code taxonomy parity: the same literals are asserted in core-ts
 // (src/test/error-code-parity.test.ts) and core-dart
@@ -20,5 +23,21 @@ func TestErrorCodeLiterals(t *testing.T) {
 		if string(code) != literal {
 			t.Errorf("error code %q, want %q", code, literal)
 		}
+	}
+}
+
+func TestRoutingErrorCanonicalJSONStructure(t *testing.T) {
+	errObj := RoutingError{
+		Code:    ErrInvalidChecksum,
+		Input:   "GABC",
+		Message: "invalid checksum",
+	}
+	raw, err := json.Marshal(errObj)
+	if err != nil {
+		t.Fatalf("Marshal RoutingError: %v", err)
+	}
+	want := `{"code":"INVALID_CHECKSUM","input":"GABC","message":"invalid checksum"}`
+	if string(raw) != want {
+		t.Errorf("RoutingError JSON = %s, want %s", string(raw), want)
 	}
 }

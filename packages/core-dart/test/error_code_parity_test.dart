@@ -16,4 +16,19 @@ void main() {
     expect(ErrorCode.federationAddressNotSupported,
         'FEDERATION_ADDRESS_NOT_SUPPORTED');
   });
+
+  test('AddressError serializes to the canonical {code, input, message} structure', () {
+    final err = AddressError(
+      code: ErrorCode.invalidChecksum,
+      input: 'GABC',
+      message: 'Invalid address checksum',
+    );
+    expect(err.toJson(), <String, dynamic>{
+      'code': 'INVALID_CHECKSUM',
+      'input': 'GABC',
+      'message': 'Invalid address checksum',
+    });
+    expect(err.toJson().keys.toList(), <String>['code', 'input', 'message']);
+    expect(err.toString(), 'Invalid address checksum');
+  });
 }

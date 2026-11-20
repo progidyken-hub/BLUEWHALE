@@ -1,6 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 const Ajv = require("ajv");
+const { checkVectorFiles } = require("../scripts/check-canonical-json");
+
+const canonicalErrors = checkVectorFiles();
+if (canonicalErrors.length > 0) {
+  console.error("Spec validation failed (non-canonical JSON formatting):");
+  for (const err of canonicalErrors) {
+    console.error("  - " + err);
+  }
+  process.exit(1);
+}
 
 const schemaPath = path.join(__dirname, "schema.json");
 const vectorsPath = path.join(__dirname, "vectors.json");

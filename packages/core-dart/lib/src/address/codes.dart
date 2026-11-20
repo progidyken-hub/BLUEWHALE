@@ -262,4 +262,29 @@ class AddressError {
     required this.input,
     required this.message,
   });
+
+  /// Serializes this error to the canonical cross-SDK `{code, input, message}`
+  /// structure shared with core-ts (`AddressParseError.toJSON()`) and
+  /// core-go (`RoutingError`).
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'input': input,
+      'message': message,
+    };
+  }
+
+  @override
+  String toString() => message;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AddressError &&
+          code == other.code &&
+          input == other.input &&
+          message == other.message;
+
+  @override
+  int get hashCode => Object.hash(code, input, message);
 }
