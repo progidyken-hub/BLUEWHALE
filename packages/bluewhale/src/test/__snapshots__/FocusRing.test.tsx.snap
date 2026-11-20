@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`focusRingCss > stays visually stable (regression snapshot) 1`] = `
+".bw-address-input__input:focus-visible,
+.bw-memo-field__input:focus-visible,
+.bw-memo-field__type:focus-visible,
+.bw-copy-button:focus-visible,
+.bw-memo-conflict__convert:focus-visible {
+  outline: 3px solid #1d4ed8 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px #ffffff !important;
+}
+.bw-address-input__input:focus:not(:focus-visible),
+.bw-memo-field__input:focus:not(:focus-visible),
+.bw-memo-field__type:focus:not(:focus-visible),
+.bw-copy-button:focus:not(:focus-visible),
+.bw-memo-conflict__convert:focus:not(:focus-visible) {
+  outline: none;
+}
+@media (forced-colors: active) {
+  .bw-address-input__input:focus-visible, .bw-memo-field__input:focus-visible, .bw-memo-field__type:focus-visible, .bw-copy-button:focus-visible, .bw-memo-conflict__convert:focus-visible {
+    outline-color: Highlight !important;
+  }
+}"
+`;

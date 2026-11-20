@@ -2,6 +2,10 @@ import React, { useState, useMemo, useEffect, useCallback, CSSProperties } from 
 import { TypeBadge, AddressType } from './components/TypeBadge';
 import { WarningList, WarningItem } from './components/WarningList';
 import { MemoField } from './components/MemoField';
+import { focusRingCss } from './styles/focusRing';
+
+/** Shared focus-ring rules; see styles/focusRing.ts for the contrast rationale. */
+const FOCUS_RING_CSS = focusRingCss();
 
 /**
  * A simplified routing result for the UI layer.
@@ -292,6 +296,9 @@ export const AddressInput: React.FC<AddressInputProps> = ({
       className={rootClass}
       style={{ maxWidth: '32rem', margin: '0 auto', fontFamily: 'sans-serif', ...style }}
     >
+      {/* High-contrast :focus-visible ring for keyboard and screen-reader users. */}
+      <style data-bw-focus-ring="">{FOCUS_RING_CSS}</style>
+
       {/* Address field */}
       <div
         className="bw-address-input__field-wrap"
@@ -320,7 +327,7 @@ export const AddressInput: React.FC<AddressInputProps> = ({
             borderRadius: '0.5rem',
             fontSize: '1rem',
             boxSizing: 'border-box',
-            outline: 'none',
+            // No `outline: none` here: the visible focus ring comes from FOCUS_RING_CSS.
             transition: 'padding 0.2s ease, border-color 0.2s ease',
           }}
         />
