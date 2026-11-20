@@ -168,9 +168,25 @@ func TestFetchStopsWhenContextIsCancelled(t *testing.T) {
 
 func TestFetchTOMLRejectsInvalidDomains(t *testing.T) {
 	c := fastClient(0)
-	for _, domain := range []string{"", "https://example.com", "example.com/path", "user@example.com", "exa mple.com", "example.com?x=1"} {
+	for _, domain := range []string{
+		"", "https://example.com", "example.com/path", "user@example.com",
+		"exa mple.com", "example.com?x=1", "-example.com", "example-.com",
+		"exa_mple.com", strings.Repeat("a", 64) + ".example",
+	} {
 		if _, err := c.FetchTOML(context.Background(), domain); !errors.Is(err, ErrInvalidDomain) {
 			t.Fatalf("FetchTOML(%q) err = %v, want ErrInvalidDomain", domain, err)
+		}
+	}
+}
+
+func TestValidDomainRejectsAdversarialLabels(t *testing.T) {
+	for _, domain := range []string{
+		strings.Repeat("a-", 30) + ".stellar.org",
+		strings.Repeat("-", 60) + ".stellar.org",
+		strings.Repeat("a.", 127) + "a",
+	} {
+		if validDomain(domain) {
+			t.Errorf("validDomain(%q) = true, want false", domain)
 		}
 	}
 }

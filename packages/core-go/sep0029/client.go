@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -214,10 +213,3 @@ func sleep(ctx context.Context, d time.Duration) error {
 	}
 }
 
-// validDomain accepts a bare host name with an optional port.
-func validDomain(domain string) bool {
-	if domain == "" || len(domain) > 253 {
-		return false
-	}
-	return !strings.ContainsAny(domain, "/?#@\\ \t\r\n") && !strings.Contains(domain, "://")
-}

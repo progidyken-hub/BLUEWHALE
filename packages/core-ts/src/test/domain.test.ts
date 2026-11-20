@@ -197,6 +197,19 @@ describe("Domain Validator – Malicious Inputs", () => {
     expect(duration).toBeLessThan(100); // Must resolve in < 100ms
     expect(res.valid).toBe(false);
   });
+
+  it("handles large adversarial label patterns without regex backtracking", () => {
+    const adversarialInputs = [
+      `${"a-".repeat(30)}.stellar.org`,
+      `${"-".repeat(60)}.stellar.org`,
+      `${"a.".repeat(127)}a`,
+      `${"a".repeat(63)}-${"b".repeat(63)}.example`,
+    ];
+
+    for (const input of adversarialInputs) {
+      expect(validateDomain(input).valid).toBe(false);
+    }
+  });
 });
 
 describe("Domain Validator – Valid Domains", () => {

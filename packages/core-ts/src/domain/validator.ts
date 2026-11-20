@@ -22,6 +22,12 @@ export interface DomainValidationOptions {
    * Defaults to true.
    */
   requireTLD?: boolean;
+
+  /**
+   * If true, allows IPv4 and IPv6 literals instead of RFC 1035 hostnames.
+   * Defaults to false.
+   */
+  allowIpLiterals?: boolean;
 }
 
 export interface DomainValidationResult {
@@ -36,10 +42,10 @@ export interface DomainValidationResult {
     | "LABEL_INVALID_START"
     | "LABEL_INVALID_END"
     | "LABEL_INVALID_CHARS"
-    | "MISSING_TLD";
+    | "MISSING_TLD"
+    | "IP_LITERAL_DISALLOWED";
 }
 
-const RFC1035_LABEL_REGEX = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
 const MAX_DOMAIN_LENGTH = 253;
 const MAX_LABEL_LENGTH = 63;
 
@@ -54,7 +60,11 @@ export function validateDomain(
   domain: string,
   options: DomainValidationOptions = {}
 ): DomainValidationResult {
-  const { allowTrailingDot = true, requireTLD = true } = options;
+  const {
+    allowTrailingDot = true,
+    requireTLD = true,
+    allowIpLiterals = false,
+  } = options;
 
   if (typeof domain !== "string" || domain.trim() === "") {
     return {
@@ -65,6 +75,16 @@ export function validateDomain(
   }
 
   let cleaned = domain.trim();
+  if (isIpLiteral(cleaned)) {
+    if (allowIpLiterals) {
+      return { valid: true, normalized: cleaned.toLowerCase() };
+    }
+    return {
+      valid: false,
+      error: "IP address literals are not allowed as domain names",
+      code: "IP_LITERAL_DISALLOWED",
+    };
+  }
 
   // Handle trailing dot for root label (FQDN)
   if (cleaned.endsWith(".")) {
@@ -94,9 +114,12 @@ export function validateDomain(
     };
   }
 
-  const labels = cleaned.split(".");
+  let labelCount = 1;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned.charCodeAt(i) === 0x2e) labelCount++;
+  }
 
-  if (requireTLD && labels.length < 2) {
+  if (requireTLD && labelCount < 2) {
     return {
       valid: false,
       error: "Domain name must contain at least two labels (including TLD)",
@@ -104,26 +127,35 @@ export function validateDomain(
     };
   }
 
-  for (let i = 0; i < labels.length; i++) {
-    const label = labels[i];
+  let labelStart = 0;
+  let labelLength = 0;
+  let labelPosition = 1;
+  for (let i = 0; i <= cleaned.length; i++) {
+    const atEnd = i === cleaned.length;
+    const code = atEnd ? -1 : cleaned.charCodeAt(i);
+    if (!atEnd && code !== 0x2e) {
+      labelLength++;
+      continue;
+    }
 
-    if (label.length === 0) {
+    const label = cleaned.slice(labelStart, i);
+    if (labelLength === 0) {
       return {
         valid: false,
-        error: `Empty label detected at position ${i + 1} (consecutive or leading dots)`,
+        error: `Empty label detected at position ${labelPosition} (consecutive or leading dots)`,
         code: "LABEL_EMPTY",
       };
     }
 
-    if (label.length > MAX_LABEL_LENGTH) {
+    if (labelLength > MAX_LABEL_LENGTH) {
       return {
         valid: false,
-        error: `Label "${label}" length (${label.length}) exceeds maximum of ${MAX_LABEL_LENGTH} characters`,
+        error: `Label "${label}" length (${labelLength}) exceeds maximum of ${MAX_LABEL_LENGTH} characters`,
         code: "LABEL_TOO_LONG",
       };
     }
 
-    if (label.startsWith("-")) {
+    if (cleaned.charCodeAt(labelStart) === 0x2d) {
       return {
         valid: false,
         error: `Label "${label}" must not start with a hyphen`,
@@ -131,7 +163,7 @@ export function validateDomain(
       };
     }
 
-    if (label.endsWith("-")) {
+    if (cleaned.charCodeAt(i - 1) === 0x2d) {
       return {
         valid: false,
         error: `Label "${label}" must not end with a hyphen`,
@@ -139,13 +171,27 @@ export function validateDomain(
       };
     }
 
-    if (!RFC1035_LABEL_REGEX.test(label)) {
-      return {
-        valid: false,
-        error: `Label "${label}" contains invalid characters; only ASCII alphanumeric and hyphens are permitted`,
-        code: "LABEL_INVALID_CHARS",
-      };
+    for (let j = labelStart; j < i; j++) {
+      const char = cleaned.charCodeAt(j);
+      if (
+        !(
+          (char >= 0x30 && char <= 0x39) ||
+          (char >= 0x41 && char <= 0x5a) ||
+          (char >= 0x61 && char <= 0x7a) ||
+          char === 0x2d
+        )
+      ) {
+        return {
+          valid: false,
+          error: `Label "${label}" contains invalid characters; only ASCII alphanumeric and hyphens are permitted`,
+          code: "LABEL_INVALID_CHARS",
+        };
+      }
     }
+
+    labelStart = i + 1;
+    labelLength = 0;
+    labelPosition++;
   }
 
   return {
@@ -162,4 +208,84 @@ export function isValidDomain(
   options?: DomainValidationOptions
 ): boolean {
   return validateDomain(domain, options).valid;
+}
+
+/** Returns true if input is an IPv4 or IPv6 address literal. */
+export function isIpLiteral(input: string): boolean {
+  if (typeof input !== "string" || input.length === 0 || input.length > 253) {
+    return false;
+  }
+
+  const address =
+    input.startsWith("[") && input.endsWith("]")
+      ? input.slice(1, -1)
+      : input;
+  if (address.includes(".")) return isIpv4Literal(address);
+  if (!address.includes(":")) return false;
+
+  const compression = address.indexOf("::");
+  if (
+    compression !== -1 &&
+    address.indexOf("::", compression + 2) !== -1
+  ) {
+    return false;
+  }
+
+  const sides =
+    compression === -1
+      ? [address]
+      : [address.slice(0, compression), address.slice(compression + 2)];
+  let groups = 0;
+  for (let sideIndex = 0; sideIndex < sides.length; sideIndex++) {
+    const side = sides[sideIndex];
+    if (side === "") continue;
+    const parts = side.split(":");
+    for (let partIndex = 0; partIndex < parts.length; partIndex++) {
+      const part = parts[partIndex];
+      if (part.includes(".")) {
+        if (
+          sideIndex !== sides.length - 1 ||
+          partIndex !== parts.length - 1 ||
+          !isIpv4Literal(part)
+        ) {
+          return false;
+        }
+        groups += 2;
+        continue;
+      }
+      if (part.length < 1 || part.length > 4) return false;
+      for (let i = 0; i < part.length; i++) {
+        const code = part.charCodeAt(i);
+        if (
+          !(
+            (code >= 0x30 && code <= 0x39) ||
+            (code >= 0x41 && code <= 0x46) ||
+            (code >= 0x61 && code <= 0x66)
+          )
+        ) {
+          return false;
+        }
+      }
+      groups++;
+    }
+  }
+
+  return compression === -1 ? groups === 8 : groups < 8;
+}
+
+function isIpv4Literal(input: string): boolean {
+  const parts = input.split(".");
+  if (parts.length !== 4) return false;
+
+  for (const part of parts) {
+    if (part.length === 0 || part.length > 3) return false;
+    let value = 0;
+    for (let i = 0; i < part.length; i++) {
+      const code = part.charCodeAt(i);
+      if (code < 0x30 || code > 0x39) return false;
+      value = value * 10 + code - 0x30;
+    }
+    if (value > 255) return false;
+  }
+  return true;
 }
