@@ -32,6 +32,12 @@ jobs:
           node-version: 20
           cache: "pnpm"
       - run: pnpm install
+      - name: Build packages
+        run: |
+          pnpm --filter @redishfish/bluewhale-core build
+          pnpm --filter @redishfish/bluewhale build
+      - name: Check UI bundle size
+        run: pnpm --filter @redishfish/bluewhale size
       # Fails the job if coverage drops below the thresholds in
       # packages/core-ts/vitest.config.ts.
       - name: core-ts tests with coverage thresholds

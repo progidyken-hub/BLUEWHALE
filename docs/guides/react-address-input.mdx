@@ -59,3 +59,38 @@ import type { AddressType } from "@redishfish/bluewhale";
 | `WarningList` | `warnings: string[]` |
 
 For backend-grade routing extraction (muxed ID decoding, memo reconciliation, precision warnings), pair these components with [`@redishfish/bluewhale-core`](/docs/api-reference/extract-routing).
+
+## React Hook Form
+
+`useBluewhaleValidation` returns a validator compatible with React Hook Form's `register` options. It accepts valid G- and M-addresses, rejects malformed addresses and contract addresses as payment destinations, and lets an empty value pass so the form can use RHF's separate `required` rule.
+
+```tsx
+import { useForm } from "react-hook-form";
+import { useBluewhaleValidation } from "@redishfish/bluewhale";
+
+type DepositFormValues = { address: string };
+
+function DepositForm() {
+  const { register, handleSubmit, formState: { errors } } =
+    useForm<DepositFormValues>();
+  const validateAddress = useBluewhaleValidation();
+
+  return (
+    <form onSubmit={handleSubmit(({ address }) => console.log(address))}>
+      <label htmlFor="address">Destination address</label>
+      <input
+        id="address"
+        {...register("address", {
+          required: "Enter a destination address.",
+          validate: validateAddress,
+        })}
+        aria-invalid={Boolean(errors.address)}
+      />
+      {errors.address && <p role="alert">{errors.address.message}</p>}
+      <button type="submit">Continue</button>
+    </form>
+  );
+}
+```
+
+See the complete runnable example in [`examples/react-deposit-form`](https://github.com/progidyken-hub/BLUEWHALE/tree/main/examples/react-deposit-form).

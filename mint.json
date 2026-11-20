@@ -57,6 +57,7 @@
         "docs/guides/flutter-deposit-addresses",
         "docs/guides/flutter-incoming-payments",
         "docs/guides/flutter-web-bigint",
+        "docs/guides/react-address-input",
         "docs/guides/qr-and-deeplink-routing"
       ]
     },
