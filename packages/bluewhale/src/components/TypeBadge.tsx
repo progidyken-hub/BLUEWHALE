@@ -116,7 +116,6 @@ export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) 
         userSelect: 'none',
         ...style,
       }}
-      title={title}
     >
       {type}
     </div>

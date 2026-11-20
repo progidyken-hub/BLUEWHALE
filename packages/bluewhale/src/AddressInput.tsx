@@ -1,7 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback, CSSProperties } from 'react';
 import { TypeBadge, AddressType } from './components/TypeBadge';
-import { WarningList, WarningItem } from './components/WarningList';
+import { WarningList } from './components/WarningList';
 import { MemoField } from './components/MemoField';
+import {
+  AddressInputLocale,
+  AddressInputTranslations,
+  getAddressInputTranslations,
+} from './i18n';
 
 /**
  * A simplified routing result for the UI layer.
@@ -37,6 +42,12 @@ export interface AddressInputProps {
    * Inline styles applied to the root element.
    */
   style?: CSSProperties;
+
+  /** Language used for built-in validation messages. @default "en" */
+  locale?: AddressInputLocale;
+
+  /** Override any built-in validation message. */
+  translations?: Partial<AddressInputTranslations>;
 }
 
 interface CopyState {
@@ -48,32 +59,40 @@ function CopyButton({
   value,
   label,
   copiedKey,
+  copied,
   onCopy,
 }: {
   value: string;
   label: string;
   copiedKey: keyof CopyState;
+  copied: boolean;
   onCopy: (key: keyof CopyState) => void;
 }) {
+  const [copyFailed, setCopyFailed] = useState(false);
   const handleClick = useCallback(async () => {
+    setCopyFailed(false);
     try {
-      if (navigator.clipboard && window.isSecureContext) {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
         await navigator.clipboard.writeText(value);
       } else {
-        // Fallback for non-secure contexts
         const el = document.createElement('textarea');
         el.value = value;
         el.style.position = 'fixed';
         el.style.opacity = '0';
         document.body.appendChild(el);
-        el.focus();
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
+        let copied = false;
+        try {
+          el.focus();
+          el.select();
+          copied = document.execCommand('copy');
+        } finally {
+          document.body.removeChild(el);
+        }
+        if (!copied) throw new Error('Clipboard copy was rejected');
       }
       onCopy(copiedKey);
     } catch {
-      // silently fail – clipboard unavailable
+      setCopyFailed(true);
     }
   }, [value, copiedKey, onCopy]);
 
@@ -87,16 +106,34 @@ function CopyButton({
         marginLeft: '0.5rem',
         padding: '0.2rem 0.5rem',
         fontSize: '0.75rem',
-        border: '1px solid #cbd5e1',
+        border: '1px solid var(--bw-border, #cbd5e1)',
         borderRadius: '0.25rem',
-        backgroundColor: '#f8fafc',
-        color: '#475569',
+        backgroundColor: 'var(--bw-bg, #f8fafc)',
+        color: 'var(--bw-text, #475569)',
         cursor: 'pointer',
         flexShrink: 0,
         transition: 'background-color 0.15s ease',
       }}
     >
       {label}
+      <span
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
+      >
+        {copied ? 'Copied!' : copyFailed ? 'Copy failed.' : ''}
+      </span>
     </button>
   );
 }
@@ -133,11 +170,11 @@ function RoutingSummary({
       style={{
         marginTop: '0.5rem',
         padding: '0.5rem 0.75rem',
-        backgroundColor: '#f1f5f9',
-        border: '1px solid #e2e8f0',
+        backgroundColor: 'var(--bw-bg, #f1f5f9)',
+        border: '1px solid var(--bw-border, #e2e8f0)',
         borderRadius: '0.375rem',
         fontSize: '0.8125rem',
-        color: '#334155',
+        color: 'var(--bw-text, #334155)',
       }}
     >
       <div
@@ -158,6 +195,7 @@ function RoutingSummary({
               value={baseAccount ?? displayAccount}
               label={copied.account ? '✓ Copied!' : 'Copy'}
               copiedKey="account"
+              copied={copied.account}
               onCopy={handleCopy}
             />
           </div>
@@ -183,6 +221,7 @@ function RoutingSummary({
                 value={memo}
                 label={copied.routingId ? '✓ Copied!' : 'Copy'}
                 copiedKey="routingId"
+                copied={copied.routingId}
                 onCopy={handleCopy}
               />
             </div>
@@ -198,54 +237,15 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   showCopyButton = false,
   className,
   style,
+  locale = 'en',
+  translations,
 }) => {
   const [address, setAddress] = useState('');
   const [memo, setMemo] = useState('');
-  // Set when the current address/memo came from a decoded SEP-0007 URI.
-  const [decodedFromURI, setDecodedFromURI] = useState(false);
-  const [uriWarnings, setUriWarnings] = useState<WarningItem[]>(EMPTY_WARNINGS);
-
-  /**
-   * Handle raw input. A pasted/scanned `web+stellar:pay?...` URI is parsed
-   * with extractRoutingFromURI and its destination and memo populate the
-   * fields; anything else is taken as a plain address.
-   */
-  const handleInput = (raw: string) => {
-    if (!isSep7URI(raw)) {
-      setAddress(raw);
-      setDecodedFromURI(false);
-      setUriWarnings(EMPTY_WARNINGS);
-      return;
-    }
-
-    const trimmed = raw.trim();
-    // The core parser matches the scheme case-sensitively; normalize it.
-    const result = extractRoutingFromURI(SEP7_SCHEME + trimmed.slice(SEP7_SCHEME.length));
-    if (result.success) {
-      setAddress(result.rawParams.destination);
-      setMemo(result.rawParams.memo ?? '');
-      setDecodedFromURI(true);
-      setUriWarnings(result.routing.warnings);
-    } else {
-      // Error text from core is already sanitized of sensitive query values.
-      setAddress(trimmed);
-      setDecodedFromURI(false);
-      setUriWarnings([{ code: result.code, message: `Could not decode Stellar URI: ${result.error}`, severity: 'error' }]);
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = e.clipboardData.getData('text');
-    if (isSep7URI(pasted)) {
-      e.preventDefault();
-      handleInput(pasted);
-    }
-  };
-
-  const baseId = useStableId('bluewhale-address');
-  const inputId = `${baseId}-input`;
-  const warningsId = `${baseId}-warnings`;
-  const statusId = `${baseId}-status`;
+  const messages = useMemo(
+    () => getAddressInputTranslations(locale, translations),
+    [locale, translations],
+  );
 
   const type = useMemo<AddressType>(() => {
     if (!address) return 'UNKNOWN';
@@ -259,15 +259,15 @@ export const AddressInput: React.FC<AddressInputProps> = ({
   const showMemo = type === 'G' || type === 'UNKNOWN';
 
   const warnings = useMemo(() => {
-    const list: WarningItem[] = [];
+    const list: string[] = [];
     if (type === 'C') {
-      list.push('Contract addresses cannot be used for standard payments.');
+      list.push(messages.contractAddressWarning);
     }
     if (type === 'M' && memo) {
-      list.push('Memo is ignored when using an M-address (routing ID is encoded in the address).');
+      list.push(messages.muxedAddressMemoWarning);
     }
     return list;
-  }, [type, memo]);
+  }, [type, memo, messages]);
 
   const routingResult = useMemo<RoutingResult>(() => {
     const isValid = address.length > 0 && type !== 'C' && type !== 'UNKNOWN';
@@ -306,7 +306,6 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           </div>
         )}
         <input
-          id={inputId}
           type="text"
           placeholder="Paste Stellar address (G..., M..., C...)"
           value={address}
@@ -316,7 +315,9 @@ export const AddressInput: React.FC<AddressInputProps> = ({
           style={{
             width: '100%',
             padding: `0.75rem 0.75rem 0.75rem ${type !== 'UNKNOWN' ? '3rem' : '0.75rem'}`,
-            border: `1px solid ${type === 'C' ? '#f87171' : '#cbd5e1'}`,
+            border: `1px solid ${type === 'C' ? '#f87171' : 'var(--bw-border, #cbd5e1)'}`,
+            backgroundColor: 'var(--bw-bg, #ffffff)',
+            color: 'var(--bw-text, #1e293b)',
             borderRadius: '0.5rem',
             fontSize: '1rem',
             boxSizing: 'border-box',

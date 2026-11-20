@@ -12,6 +12,7 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles/components.css",
+    "./theme.css": "./dist/styles/theme.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],

@@ -59,3 +59,52 @@ import type { AddressType } from "@redishfish/bluewhale";
 | `WarningList` | `warnings: string[]` |
 
 For backend-grade routing extraction (muxed ID decoding, memo reconciliation, precision warnings), pair these components with [`@redishfish/bluewhale-core`](/docs/api-reference/extract-routing).
+
+## Validation message localization
+
+`AddressInput` supports English (`en`), Spanish (`es`), French (`fr`), Chinese
+(`zh`), and Russian (`ru`). Pass `locale` to select the built-in messages, or
+provide a `translations` object to override individual validation messages:
+
+```tsx
+<AddressInput
+  locale="es"
+  translations={{
+    contractAddressWarning: "Custom message for contract destinations.",
+  }}
+/>
+```
+
+The override keys are `contractAddressWarning` and
+`muxedAddressMemoWarning`; omitted keys use the selected locale's translation.
+
+## Theming
+
+Import the optional stylesheet to apply the default theme and mobile layout:
+
+```tsx
+import "@redishfish/bluewhale/styles.css";
+```
+
+The stylesheet exports four CSS custom properties that can be overridden on
+`:root` or any ancestor of an `AddressInput`. The defaults follow the user's
+`prefers-color-scheme` setting, including dark mode.
+
+| Property | Purpose | Light default |
+| --- | --- | --- |
+| `--bw-bg` | Component and input backgrounds | `#ffffff` |
+| `--bw-border` | Input and summary borders | `#cbd5e1` |
+| `--bw-text` | Primary component text | `#1e293b` |
+| `--bw-warning` | Warning text and accents | `#92400e` |
+
+```css
+:root {
+  --bw-bg: #111827;
+  --bw-border: #374151;
+  --bw-text: #f9fafb;
+  --bw-warning: #fbbf24;
+}
+```
+
+To load only the theme variables, import
+`@redishfish/bluewhale/theme.css`.

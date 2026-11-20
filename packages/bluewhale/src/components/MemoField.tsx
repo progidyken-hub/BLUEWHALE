@@ -41,7 +41,7 @@ interface MemoFieldProps {
 const controlStyle: CSSProperties = {
   minHeight: MIN_TOUCH_TARGET,
   padding: '0.5rem 0.75rem',
-  border: '1px solid #cbd5e1',
+  border: '1px solid var(--bw-border, #cbd5e1)',
   borderRadius: '0.375rem',
   fontSize: '1rem',
   boxSizing: 'border-box',
@@ -93,7 +93,7 @@ export const MemoField: React.FC<MemoFieldProps> = ({
             className="bw-memo-field__type"
             value={memoType}
             onChange={(e) => onMemoTypeChange(e.target.value as MemoType)}
-            style={{ ...controlStyle, flex: '1 1 10rem', backgroundColor: '#fff' }}
+            style={{ ...controlStyle, flex: '1 1 10rem', backgroundColor: 'var(--bw-bg, #fff)', color: 'var(--bw-text, #1e293b)' }}
           >
             {memoTypes.map((type) => (
               <option key={type} value={type}>
@@ -110,7 +110,7 @@ export const MemoField: React.FC<MemoFieldProps> = ({
           onChange={(e) => onChange(e.target.value)}
           disabled={showTypeSelect && memoType === 'none'}
           className="bw-memo-field__input"
-          style={{ ...controlStyle, flex: '999 1 14rem', width: '100%' }}
+          style={{ ...controlStyle, flex: '999 1 14rem', width: '100%', backgroundColor: 'var(--bw-bg, #fff)', color: 'var(--bw-text, #1e293b)' }}
         />
       </div>
       <div
