@@ -168,10 +168,82 @@ for (const [runnerName, run] of Object.entries(sdkRunners)) {
   assertRunnerFailsGracefully(runnerName, run);
 }
 
+// --- Empty MEMO_TEXT vectors (spec/vectors/empty-memos.json) ---
+//
+// A MEMO_TEXT that is omitted, null, "" or only ASCII whitespace (space, tab,
+// LF, CR) MUST resolve to memo type "none": no routing ID from the memo and
+// no warnings. Every SDK runs this file; here we check it is well formed and
+// that each expectation agrees with that rule.
+const emptyMemosPath = path.join(__dirname, "vectors", "empty-memos.json");
+const emptyMemos = JSON.parse(fs.readFileSync(emptyMemosPath, "utf8"));
+
+function failEmptyMemo(id, message) {
+  console.error("Spec validation failed: empty-memos.json [" + id + "]: " + message);
+  process.exit(1);
+}
+
+if (!Array.isArray(emptyMemos.cases) || emptyMemos.cases.length === 0) {
+  failEmptyMemo("-", "cases must be a non-empty array");
+}
+
+const isBlankMemoText = (v) => v === undefined || v === null || /^[ \t\n\r]*$/.test(v);
+const emptyMemoIds = new Set();
+let blankMemoCases = 0;
+
+for (const c of emptyMemos.cases) {
+  const id = c.id;
+  if (typeof id !== "string" || id === "") failEmptyMemo("?", "every case needs an id");
+  if (emptyMemoIds.has(id)) failEmptyMemo(id, "duplicate id");
+  emptyMemoIds.add(id);
+
+  const { input, expected } = c;
+  if (!input || typeof input.destination !== "string" || typeof input.memoType !== "string") {
+    failEmptyMemo(id, "input.destination and input.memoType must be strings");
+  }
+  if ("memoValue" in input && input.memoValue !== null && typeof input.memoValue !== "string") {
+    failEmptyMemo(id, "input.memoValue must be a string, null or omitted");
+  }
+  if (!expected || !Array.isArray(expected.warnings)) {
+    failEmptyMemo(id, "expected.warnings must be an array");
+  }
+  for (const key of ["effectiveMemoType", "routingSource"]) {
+    if (typeof expected[key] !== "string") failEmptyMemo(id, "expected." + key + " must be a string");
+  }
+  for (const key of ["destinationBaseAccount", "routingId"]) {
+    if (expected[key] !== null && typeof expected[key] !== "string") {
+      failEmptyMemo(id, "expected." + key + " must be a string or null");
+    }
+  }
+
+  const blank = input.memoType === "text" && isBlankMemoText(input.memoValue);
+  const wantEffective = blank ? "none" : input.memoType;
+  if (expected.effectiveMemoType !== wantEffective) {
+    failEmptyMemo(id, "effectiveMemoType must be " + wantEffective + ", got " + expected.effectiveMemoType);
+  }
+  if (expected.effectiveMemoType === "none") {
+    if (expected.warnings.length !== 0) failEmptyMemo(id, "memo type none must not produce warnings");
+    if (expected.routingSource === "memo") failEmptyMemo(id, "memo type none cannot route from the memo");
+  }
+  if (blank) blankMemoCases++;
+}
+
+// The acceptance criteria require "", " " and null to be covered.
+for (const required of ["", " ", null]) {
+  const covered = emptyMemos.cases.some(
+    (c) => c.input.memoType === "text" && "memoValue" in c.input && c.input.memoValue === required,
+  );
+  if (!covered) failEmptyMemo("-", "missing MEMO_TEXT case for " + JSON.stringify(required));
+}
+
 console.log(
   "Spec validation passed (spec_version: " +
     vectors.spec_version +
     ", corrupted-checksum vectors: " +
     corruptedChecksumVectors.length +
+    ", empty-memo vectors: " +
+    emptyMemos.cases.length +
+    " (" +
+    blankMemoCases +
+    " blank)" +
     ")",
 );

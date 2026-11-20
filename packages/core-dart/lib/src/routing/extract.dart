@@ -55,6 +55,19 @@ RoutingResult _filterResultBySeverity(RoutingResult result, String? minSeverityL
 }
 
 RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
+  // A blank MEMO_TEXT ('', whitespace-only or null) is treated exactly like
+  // no memo in every SDK (spec/vectors/empty-memos.json).
+  final memoType = effectiveMemoType(input.memoType, input.memoValue);
+  if (memoType != input.memoType) {
+    input = RoutingInput(
+      destination: input.destination,
+      memoType: memoType,
+      memoValue: input.memoValue,
+      sourceAccount: input.sourceAccount,
+      minSeverityLevel: input.minSeverityLevel,
+    );
+  }
+
   final trimmed = input.destination.trim();
 
   // Empty destination → return structured destinationError (zero-throw policy).

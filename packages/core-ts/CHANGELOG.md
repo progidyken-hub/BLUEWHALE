@@ -11,6 +11,8 @@ Releases are coordinated with `spec/vectors.json` `spec_version`: see
 
 ### Added
 
+- `isBlankMemoText` and `effectiveMemoType`, the shared rule for empty memos.
+
 - `isPublicKeyAddress`, `isMuxedAddress` and `isContractAddress` predicates,
   narrowing to the branded `PublicKeyAddress`, `MuxedAddress` and
   `ContractAddress` types.
@@ -48,6 +50,11 @@ Releases are coordinated with `spec/vectors.json` `spec_version`: see
 
 ### Changed
 
+- A MEMO_TEXT that is null, `""` or only ASCII whitespace (space, tab, LF,
+  CR) is now treated as no memo by `extractRouting`, for G and M
+  destinations alike. It previously emitted
+  `MEMO_TEXT_UNROUTABLE` / `MEMO_IGNORED_FOR_MUXED`.
+  Normative cases: `spec/vectors/empty-memos.json`.
 - CRC16 moved to `src/strkey/crc16.ts` as a table-driven CRC16-XModem with a
   lazy runtime self-test (`crc16SelfTest`, check value `0x31C3`, little-endian
   checksum bytes) and new exports `crc16Xmodem`, `crc16ChecksumBytes`,

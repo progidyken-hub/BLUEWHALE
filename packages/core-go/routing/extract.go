@@ -46,6 +46,10 @@ func ExtractRouting(input RoutingInput) RoutingResult {
 }
 
 func extractRouting(input RoutingInput) RoutingResult {
+	// A blank MEMO_TEXT ("" or whitespace-only) is treated exactly like no
+	// memo in every SDK (spec/vectors/empty-memos.json). input is a copy.
+	input.MemoType = string(EffectiveMemoType(input.MemoType, input.MemoValue))
+
 	if input.SourceAccount != "" {
 		source, err := address.Parse(input.SourceAccount)
 		if err == nil && source.Kind == address.KindC {

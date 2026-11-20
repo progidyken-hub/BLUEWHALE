@@ -57,7 +57,8 @@
         "docs/guides/flutter-deposit-addresses",
         "docs/guides/flutter-incoming-payments",
         "docs/guides/flutter-web-bigint",
-        "docs/guides/qr-and-deeplink-routing"
+        "docs/guides/qr-and-deeplink-routing",
+        "docs/guides/conformance"
       ]
     },
     {
@@ -89,6 +90,7 @@
       "group": "Reference",
       "pages": [
         "docs/common-mistakes",
+        "docs/benchmarks/parity",
         "docs/glossary",
         "docs/contributing"
       ]

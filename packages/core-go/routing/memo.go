@@ -87,3 +87,33 @@ func NormalizeMemoTextID(s string) NormalizeResult {
 
 	return NormalizeResult{Normalized: normalized, Warnings: warnings}
 }
+
+// IsBlankMemoText reports whether a MEMO_TEXT value carries no content: ""
+// or only ASCII whitespace (space, tab, LF, CR), per spec/README.md rule 5.
+//
+// Non-ASCII whitespace such as U+00A0 is content, not blank, so it is still
+// reported as an unroutable MEMO_TEXT. Shared with core-ts
+// (isBlankMemoText) and core-dart (isBlankMemoText).
+func IsBlankMemoText(value string) bool {
+	for i := 0; i < len(value); i++ {
+		switch value[i] {
+		case ' ', '\t', '\n', '\r':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// EffectiveMemoType resolves the memo type routing actually acts on. A blank
+// MEMO_TEXT (see IsBlankMemoText) is the same as no memo, so it resolves to
+// MemoTypeNone: no routing ID and no memo warnings, for G and M destinations
+// alike. Every other memo type is returned unchanged.
+//
+// Normative cases live in spec/vectors/empty-memos.json.
+func EffectiveMemoType(memoType, memoValue string) MemoType {
+	if memoType == string(MemoTypeText) && IsBlankMemoText(memoValue) {
+		return MemoTypeNone
+	}
+	return MemoType(memoType)
+}
