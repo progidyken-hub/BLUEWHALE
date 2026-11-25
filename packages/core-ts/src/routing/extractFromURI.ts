@@ -147,7 +147,6 @@ function mapMemoType(sep7MemoType: string | undefined): RoutingInput["memoType"]
  * }
  * ```
  */
-
 export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIResult {
   // 1. Validate scheme
   if (!uriString.startsWith("web+stellar:")) {
@@ -168,7 +167,6 @@ export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIR
   // The operation is URI-derived text, so it passes through the query
   // sanitizer before reaching the error description.
   if (operation !== "pay") {
-    const sanitizedOp = sanitizeSep7UriForLogging(operation);
     return {
       success: false,
       error: `Unsupported operation: '${sanitizeSep7UriForLogging(operation)}'. Only 'pay' is supported for routing extraction.`,

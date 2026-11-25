@@ -35,7 +35,9 @@
     "test:bun": "bun test ./tests/runtime/bun.smoke.ts",
     "test:deno": "deno test --allow-read --allow-env tests/runtime/deno.smoke.ts",
     "lint": "eslint src/**/*.ts",
-    "check:types": "attw --pack . --profile node16"
+    "check:types": "attw --pack . --profile node16",
+    "mutation": "stryker run",
+    "mutation:ci": "stryker run --reporters progress,html,json"
   },
   "peerDependencies": {
     "@stellar/stellar-sdk": ">=10.0.0"
@@ -44,6 +46,9 @@
     "@arethetypeswrong/cli": "^0.18.2",
     "@redishfish/bluewhale-spec": "workspace:*",
     "@stellar/stellar-sdk": "^17.4.0",
+    "@stryker-mutator/core": "^8.6.0",
+    "@stryker-mutator/vitest-runner": "^8.6.0",
+    "@stryker-mutator/typescript-checker": "^8.6.0",
     "eslint": "^10.15.0",
     "tsup": "^9.0.0",
     "typescript": "^7.0.2",
