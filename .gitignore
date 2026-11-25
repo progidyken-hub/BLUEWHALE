@@ -4,6 +4,10 @@ dist/
 .pnpm-store/
 *.tsbuildinfo
 
+# Storybook
+storybook-static/
+test-results/
+
 # ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

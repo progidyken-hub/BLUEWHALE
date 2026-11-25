@@ -1,0 +1,72 @@
+name: Storybook Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/bluewhale
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        working-directory: .
+      
+      - name: Build Storybook
+        run: npm run build-storybook
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      
+      - name: Run Storybook tests
+        run: npm run test-storybook
+      
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-test-results
+          path: packages/bluewhale/test-results/
+
+  # Optional: Chromatic visual regression testing
+  # Uncomment and configure with CHROMATIC_PROJECT_TOKEN secret
+  # chromatic:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: packages/bluewhale
+  #   
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #     
+  #     - name: Install dependencies
+  #       run: npm ci
+  #       working-directory: .
+  #     
+  #     - name: Publish to Chromatic
+  #       uses: chromaui/action@latest
+  #       with:
+  #         projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+  #         workingDir: packages/bluewhale
