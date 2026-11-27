@@ -9,6 +9,72 @@ Releases are coordinated with `spec/vectors.json` `spec_version`: see
 
 ## [Unreleased]
 
+### Added
+
+- `isBlankMemoText` and `effectiveMemoType`, the shared rule for empty memos.
+
+- `isPublicKeyAddress`, `isMuxedAddress` and `isContractAddress` predicates,
+  narrowing to the branded `PublicKeyAddress`, `MuxedAddress` and
+  `ContractAddress` types.
+- A cross-language parity test (`src/spec/warning-codes.test.ts`) that reads
+  `spec/schema.json` and asserts the `WarningCode` union matches it.
+- `JSON.stringify(extractRouting(...))` no longer throws on a `bigint`
+  `routingId`: results carry a non-enumerable `toJSON()` that writes the ID
+  as a decimal string. Also adds `stringifyRoutingResult`,
+  `toSerializableRoutingResult`, `routingIdToJSON` and the
+  `SerializedRoutingResult` type (#201).
+
+### Fixed
+
+- **Breaking for consumers matching on warning codes:** `extractRouting`
+  reported `MEMO_TEXT_UNROUTABLE` for a `hash` or `return` memo and for any
+  unrecognized memo type. It now reports `UNSUPPORTED_MEMO_TYPE` with the
+  `context.memoType` that `spec/schema.json` requires and that core-go and
+  core-dart already emitted (#76). `MEMO_TEXT_UNROUTABLE` is now reserved for
+  a `MEMO_TEXT` value that is not a numeric uint64.
+- `@stellar/stellar-sdk` v17 removed its default export, so
+  `import StellarSdk from "@stellar/stellar-sdk"` left `StrKey` undefined and
+  12 test files failed to load. Switched to the named import.
+- `extractFromURI.ts` declared `sanitizeSep7UriForLogging` twice (a bad merge),
+  which is a hard esbuild error. Kept the documented implementation.
+- The spec runner did not account for the legacy 50-character placeholder
+  addresses in `spec/vectors.json`, which no implementation can parse.
+  core-dart already substitutes canonical addresses and core-go skips those
+  vectors; core-ts now substitutes identically. It also stopped asserting
+  that a C-destination throws, which contradicted the vector's expected
+  `INVALID_DESTINATION` result.
+- `parse` indexed into inputs too short to hold a version prefix and threw a
+  `TypeError` for non-strings. Inputs under 4 characters and non-strings now
+  fail with a structured `AddressParseError` (`INVALID_LENGTH`), which
+  `extractRouting` reports as a `destinationError` (#199).
+
+### Changed
+
+- A MEMO_TEXT that is null, `""` or only ASCII whitespace (space, tab, LF,
+  CR) is now treated as no memo by `extractRouting`, for G and M
+  destinations alike. It previously emitted
+  `MEMO_TEXT_UNROUTABLE` / `MEMO_IGNORED_FOR_MUXED`.
+  Normative cases: `spec/vectors/empty-memos.json`.
+- CRC16 moved to `src/strkey/crc16.ts` as a table-driven CRC16-XModem with a
+  lazy runtime self-test (`crc16SelfTest`, check value `0x31C3`, little-endian
+  checksum bytes) and new exports `crc16Xmodem`, `crc16ChecksumBytes`,
+  `verifyCrc16Checksum` and `Crc16IntegrityError`; `detect` uses it (#196).
+- `package.json` now has an `exports` map with explicit `bun` and `deno`
+  conditions (#200) and declares `"sideEffects": false`, with a test that
+  importing only `extractRouting` stays under 5 KB gzipped (#194).
+
+## [1.3.0] - 2026-11-21
+
+### Added
+
+- SEP-0029 routing vectors (`extract_routing`) for a no-memo G-address, a C-address
+  rejected with a MEMO_ID, and a hash memo that emits `UNSUPPORTED_MEMO_TYPE`.
+- Negative `muxed_decode` vectors for non-canonical base32 padding.
+
+### Changed
+
+- `spec_version` is 1.3.0.
+
 ## [1.2.0] - 2026-09-24
 
 Implements spec `1.2.0`.

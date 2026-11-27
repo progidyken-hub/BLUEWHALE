@@ -2,6 +2,9 @@ package routing
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -10,30 +13,22 @@ import (
 
 // normalizeUnsupportedMemoType canonicalizes a memo type string by lower-casing it
 // and stripping underscores and hyphens, then maps it to a known unsupported type.
-// Uses strings.Builder to avoid intermediate string allocations from chained ReplaceAll/ToLower.
+// Uses allocation-free byte comparisons: exact-match fast paths for canonical types, then a folded compare.
 func normalizeUnsupportedMemoType(memoType string) string {
 	switch memoType {
 	case "hash", "return":
 		return memoType
 	}
 
-	var sb strings.Builder
-	sb.Grow(len(memoType))
-	for i := 0; i < len(memoType); i++ {
-		c := memoType[i]
-		if c == '_' || c == '-' {
-			continue
-		}
-		if 'A' <= c && c <= 'Z' {
-			c += 'a' - 'A'
-		}
-		sb.WriteByte(c)
+	switch memoType {
+	case "none", "id", "text":
+		return ""
 	}
 
-	switch sb.String() {
-	case "memohash":
+	switch {
+	case foldedMemoTypeEquals(memoType, "memohash"):
 		return "hash"
-	case "memoreturn":
+	case foldedMemoTypeEquals(memoType, "memoreturn"):
 		return "return"
 	default:
 		return ""
@@ -51,6 +46,10 @@ func ExtractRouting(input RoutingInput) RoutingResult {
 }
 
 func extractRouting(input RoutingInput) RoutingResult {
+	// A blank MEMO_TEXT ("" or whitespace-only) is treated exactly like no
+	// memo in every SDK (spec/vectors/empty-memos.json). input is a copy.
+	input.MemoType = string(EffectiveMemoType(input.MemoType, input.MemoValue))
+
 	if input.SourceAccount != "" {
 		source, err := address.Parse(input.SourceAccount)
 		if err == nil && source.Kind == address.KindC {
@@ -208,17 +207,25 @@ func extractRouting(input RoutingInput) RoutingResult {
 // cancellation and deadline propagation.
 type MemoRequirementFetcher func(baseAccount string) (bool, error)
 
-// ContextMemoRequirementFetcher is the context-aware variant of
-// [MemoRequirementFetcher]. Prefer this type for new code.
+// ContextMemoRequirementFetcher is the context-aware form of
+// [MemoRequirementFetcher]. Implementations should honour ctx cancellation so
+// an in-flight Horizon or indexer lookup does not outlive the caller's
+// deadline.
 type ContextMemoRequirementFetcher func(ctx context.Context, baseAccount string) (bool, error)
 
-// ExtractRoutingWithContext performs normal routing extraction and optionally
-// adds the SEP-0029 error when a classic destination requires a memo but no
-// routing ID was supplied. Fetch failures fail open so callers retain the
-// result of the synchronous parser.
+// ExtractRoutingWithContext performs normal routing extraction and
+// optionally adds the SEP-0029 error when a classic destination requires a
+// memo but no routing ID was supplied. Fetch failures fail open so callers
+// retain the result of the synchronous parser.
+//
+// ctx is forwarded to fetch, allowing a cancelled or expired context to abort
+// the lookup; a fetcher that returns an error contributes no warning.
 func ExtractRoutingWithContext(ctx context.Context, input RoutingInput, fetch ContextMemoRequirementFetcher) RoutingResult {
 	result := ExtractRouting(input)
 	if fetch == nil || result.DestinationBaseAccount == "" || result.RoutingID != nil || result.DestinationError != nil {
+		return result
+	}
+	if err := ctx.Err(); err != nil {
 		return result
 	}
 	required, err := fetch(ctx, result.DestinationBaseAccount)
@@ -252,3 +259,25 @@ func ExtractRoutingWithMemoRequirement(input RoutingInput, fetch MemoRequirement
 func stringValue(s string) string {
 	return s
 }
+
+// ValidateHostAntiSSRF validates that host / IP is not a loopback, private or link-local address
+// to protect against Server-Side Request Forgery (SSRF) when resolving stellar.toml (Issue #212).
+func ValidateHostAntiSSRF(hostOrIP string) error {
+	ip := net.ParseIP(hostOrIP)
+	if ip == nil {
+		ips, err := net.LookupIP(hostOrIP)
+		if err != nil {
+			return err
+		}
+		if len(ips) == 0 {
+			return errors.New("no IP addresses resolved for host")
+		}
+		ip = ips[0]
+	}
+
+	if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
+		return fmt.Errorf("SSRF protection: prohibited address %s", ip.String())
+	}
+	return nil
+}
+

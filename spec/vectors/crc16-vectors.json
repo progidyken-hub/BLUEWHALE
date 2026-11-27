@@ -1,0 +1,152 @@
+[
+  {
+    "description": "CRC-16/XMODEM over 0 bytes",
+    "input": {
+      "hex": ""
+    },
+    "expected": {
+      "crc16": "0000",
+      "littleEndianBytes": "0000"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 1 bytes",
+    "input": {
+      "hex": "00"
+    },
+    "expected": {
+      "crc16": "0000",
+      "littleEndianBytes": "0000"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 1 bytes",
+    "input": {
+      "hex": "ff"
+    },
+    "expected": {
+      "crc16": "1EF0",
+      "littleEndianBytes": "F01E"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 16 bytes",
+    "input": {
+      "hex": "00000000000000000000000000000000"
+    },
+    "expected": {
+      "crc16": "0000",
+      "littleEndianBytes": "0000"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 16 bytes",
+    "input": {
+      "hex": "ffffffffffffffffffffffffffffffff"
+    },
+    "expected": {
+      "crc16": "0041",
+      "littleEndianBytes": "4100"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 9 bytes",
+    "input": {
+      "hex": "313233343536373839"
+    },
+    "expected": {
+      "crc16": "31C3",
+      "littleEndianBytes": "C331"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 16 bytes",
+    "input": {
+      "hex": "000102030405060708090a0b0c0d0e0f"
+    },
+    "expected": {
+      "crc16": "513D",
+      "littleEndianBytes": "3D51"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 32 bytes",
+    "input": {
+      "hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+    },
+    "expected": {
+      "crc16": "D2FF",
+      "littleEndianBytes": "FFD2"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 1 bytes",
+    "input": {
+      "hex": "80"
+    },
+    "expected": {
+      "crc16": "9188",
+      "littleEndianBytes": "8891"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 2 bytes",
+    "input": {
+      "hex": "0100"
+    },
+    "expected": {
+      "crc16": "3331",
+      "littleEndianBytes": "3133"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 2 bytes",
+    "input": {
+      "hex": "0001"
+    },
+    "expected": {
+      "crc16": "1021",
+      "littleEndianBytes": "2110"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 2 bytes",
+    "input": {
+      "hex": "8000"
+    },
+    "expected": {
+      "crc16": "1B98",
+      "littleEndianBytes": "981B"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 1 bytes",
+    "input": {
+      "hex": "30"
+    },
+    "expected": {
+      "crc16": "3653",
+      "littleEndianBytes": "5336"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 33 bytes",
+    "input": {
+      "hex": "101010101010101010101010101010101010101010101010101010101010101010"
+    },
+    "expected": {
+      "crc16": "7738",
+      "littleEndianBytes": "3877"
+    }
+  },
+  {
+    "description": "CRC-16/XMODEM over 20 bytes",
+    "input": {
+      "hex": "9da15eda078f68c45064326a70cf8c8b4110a5be"
+    },
+    "expected": {
+      "crc16": "FC34",
+      "littleEndianBytes": "34FC"
+    }
+  }
+]

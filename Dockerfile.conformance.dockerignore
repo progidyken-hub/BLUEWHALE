@@ -1,0 +1,8 @@
+# Build context filter for Dockerfile.conformance (BuildKit picks this file
+# up automatically for that Dockerfile). Keep host build output out of the
+# image so the self-test always builds core-ts from source.
+**/node_modules
+**/dist
+**/.dart_tool
+**/build
+.git

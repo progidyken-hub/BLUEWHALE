@@ -1,0 +1,122 @@
+[
+  {
+    "description": "28 one-byte characters: exact limit",
+    "input": {
+      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 28
+    }
+  },
+  {
+    "description": "29 one-byte characters: one byte over",
+    "input": {
+      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 29
+    }
+  },
+  {
+    "description": "14 two-byte characters: 28 bytes",
+    "input": {
+      "text": "éééééééééééééé"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 28
+    }
+  },
+  {
+    "description": "15 two-byte characters: 30 bytes",
+    "input": {
+      "text": "ééééééééééééééé"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 30
+    }
+  },
+  {
+    "description": "9 three-byte characters: 27 bytes",
+    "input": {
+      "text": "中中中中中中中中中"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 27
+    }
+  },
+  {
+    "description": "9 three-byte characters plus 1 ASCII: 28 bytes",
+    "input": {
+      "text": "中中中中中中中中中a"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 28
+    }
+  },
+  {
+    "description": "9 three-byte characters plus 2 ASCII: 29 bytes",
+    "input": {
+      "text": "中中中中中中中中中aa"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 29
+    }
+  },
+  {
+    "description": "7 four-byte characters: 28 bytes",
+    "input": {
+      "text": "😀😀😀😀😀😀😀"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 28
+    }
+  },
+  {
+    "description": "7 four-byte characters plus 1 ASCII: 29 bytes",
+    "input": {
+      "text": "😀😀😀😀😀😀😀a"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 29
+    }
+  },
+  {
+    "description": "mixed 1, 2, 3 and 4 byte characters: 28 bytes",
+    "input": {
+      "text": "aé中😀éé中中😀aaaa"
+    },
+    "expected": {
+      "accepted": true,
+      "byteLength": 28
+    }
+  },
+  {
+    "description": "mixed 1, 2, 3 and 4 byte characters: 29 bytes",
+    "input": {
+      "text": "aé中😀éé中中😀aaaaa"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 29
+    }
+  },
+  {
+    "description": "27 ASCII plus one two-byte character: 29 bytes, the character is not split",
+    "input": {
+      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaé"
+    },
+    "expected": {
+      "error": "MEMO_TEXT_TOO_LONG",
+      "byteLength": 29
+    }
+  }
+]

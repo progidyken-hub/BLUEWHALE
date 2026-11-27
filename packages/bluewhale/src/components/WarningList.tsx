@@ -8,6 +8,11 @@ interface WarningListProps {
   style?: CSSProperties;
 }
 
+const containerStyle = {
+  backgroundColor: '#fef3c7',
+  borderColor: '#fcd34d',
+};
+
 export const WarningList: React.FC<WarningListProps> = ({ warnings, className, style }) => {
   if (!warnings || warnings.length === 0) return null;
 
@@ -19,10 +24,10 @@ export const WarningList: React.FC<WarningListProps> = ({ warnings, className, s
       style={{
         marginTop: '0.5rem',
         padding: '0.75rem',
-        backgroundColor: containerStyle.backgroundColor,
-        border: `1px solid ${containerStyle.borderColor}`,
+        backgroundColor: 'var(--bw-bg, #fffbeb)',
+        border: '1px solid var(--bw-warning, #fcd34d)',
         borderRadius: '0.375rem',
-        color: '#92400e',
+        color: 'var(--bw-warning, #92400e)',
         fontSize: '0.875rem',
         ...style,
       }}

@@ -1,11 +1,28 @@
 import type { MemoRequirementFetcher, RoutingInput, RoutingResult } from "./types";
 import { extractRouting } from "./extract";
+import { RFC1035_LABEL, TRAILING_SLASH } from "../patterns";
 
 const DEFAULT_HORIZON_URL = "https://horizon.stellar.org";
+
+/**
+ * Validates domain format conforming to RFC 1035 rules (Issue #293).
+ */
+export function isValidRfc1035Domain(domain: string): boolean {
+  if (!domain || domain.length > 253) return false;
+  const labels = domain.split(".");
+  if (labels.length < 2) return false;
+
+  return labels.every((label) => RFC1035_LABEL.test(label));
+}
 
 export type MemoRequirement = {
   required: boolean;
 };
+
+export interface StellarTomlResolverOptions {
+  allowHttp?: boolean;
+  pinnedCertFingerprints?: string[];
+}
 
 function decodeDataValue(value: unknown): boolean {
   if (value === "1" || value === 1 || value === true) return true;
@@ -21,10 +38,15 @@ function decodeDataValue(value: unknown): boolean {
 export async function fetchMemoRequirement(
   baseAccount: string,
   fetchImpl: typeof fetch = fetch,
-  horizonUrl = DEFAULT_HORIZON_URL
+  horizonUrl = DEFAULT_HORIZON_URL,
+  options?: StellarTomlResolverOptions
 ): Promise<boolean> {
+  // Enforce strict HTTPS (Issue #292)
+  if (!options?.allowHttp && !horizonUrl.startsWith("https://")) {
+    throw new Error("SEP-0029 requires strict HTTPS protocol for resolver endpoint");
+  }
   const response = await fetchImpl(
-    `${horizonUrl.replace(/\/$/, "")}/accounts/${encodeURIComponent(baseAccount)}`
+    `${horizonUrl.replace(TRAILING_SLASH, "")}/accounts/${encodeURIComponent(baseAccount)}`
   );
   if (!response.ok) return false;
 

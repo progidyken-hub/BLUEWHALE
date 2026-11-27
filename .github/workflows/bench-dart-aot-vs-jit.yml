@@ -1,0 +1,95 @@
+name: bench-dart-aot-vs-jit
+
+# Issue #449 — Benchmark Dart AOT compilation speed vs JIT on ARM64 mobile targets.
+#
+# Runs the aot_vs_jit_benchmark.dart file in both JIT and AOT compilation modes
+# on a GitHub-hosted ARM64 runner and prints a side-by-side comparison table.
+# Results are uploaded as workflow artifacts so they can be compared across runs.
+#
+# The workflow triggers on:
+#   - pushes to main that touch the Dart core package or the benchmark
+#   - PRs that touch the same paths
+#   - manual dispatch (workflow_dispatch) for on-demand profiling
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/core-dart/**"
+  pull_request:
+    paths:
+      - "packages/core-dart/**"
+  workflow_dispatch:
+
+jobs:
+  benchmark-arm64:
+    name: "Dart AOT vs JIT — ARM64"
+    # ubuntu-24.04-arm is the GitHub-hosted ARM64 runner.
+    # Falls back to ubuntu-latest (x86-64) if ARM runners are unavailable.
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Dart SDK (stable)
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install dependencies
+        run: dart pub get
+        working-directory: packages/core-dart
+
+      # ── JIT run ────────────────────────────────────────────────────────────
+      - name: Run benchmark in JIT mode
+        run: |
+          dart run benchmark/aot_vs_jit_benchmark.dart --json \
+            > /tmp/results-jit.json
+          echo "=== JIT text output ==="
+          dart run benchmark/aot_vs_jit_benchmark.dart
+        working-directory: packages/core-dart
+
+      # ── AOT compile ────────────────────────────────────────────────────────
+      - name: Compile AOT binary
+        run: |
+          dart compile exe benchmark/aot_vs_jit_benchmark.dart \
+            -o /tmp/bw_bench_aot
+        working-directory: packages/core-dart
+
+      # ── AOT run ────────────────────────────────────────────────────────────
+      - name: Run benchmark in AOT mode
+        run: |
+          /tmp/bw_bench_aot --json > /tmp/results-aot.json
+          echo "=== AOT text output ==="
+          /tmp/bw_bench_aot
+
+      # ── Comparison table ───────────────────────────────────────────────────
+      - name: Print AOT vs JIT comparison
+        run: |
+          echo ""
+          echo "╔════════════════════════════════════════════════════════════════╗"
+          echo "║      Dart AOT vs JIT — Throughput comparison (ops/sec)         ║"
+          echo "╠════════════════════════════════════════════════════════════════╣"
+          printf "║  %-36s  %10s  %10s  ║\n" "Benchmark" "JIT" "AOT"
+          echo "╠════════════════════════════════════════════════════════════════╣"
+
+          # Use jq to merge and print the comparison.
+          jq -r --slurpfile aot /tmp/results-aot.json '
+            .benchmarks[] as $jit |
+            ($aot[0].benchmarks[] | select(.benchmark == $jit.benchmark)) as $aot_b |
+            "║  \($jit.benchmark | .[0:36] | . + " " * (36 - length))  \($jit.throughputOpsPerSec | tostring | . + " " * (10 - length))  \($aot_b.throughputOpsPerSec | tostring | . + " " * (10 - length))  ║"
+          ' /tmp/results-jit.json || true
+
+          echo "╚════════════════════════════════════════════════════════════════╝"
+
+      # ── Artifacts ─────────────────────────────────────────────────────────
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dart-benchmark-arm64-${{ github.sha }}
+          path: |
+            /tmp/results-jit.json
+            /tmp/results-aot.json
+          retention-days: 30

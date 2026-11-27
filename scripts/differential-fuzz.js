@@ -18,13 +18,12 @@
  *   node scripts/differential-fuzz.js [options]
  *
  * Options:
- *   --count N          number of generated inputs (default 10000)
+ *   --count N          number of generated inputs (default 100000)
  *   --seed N           PRNG seed for reproducible runs (default: random)
  *   --langs a,b,c      subset of ts,go,dart (default: all available)
  *   --corpus FILE      newline-delimited inputs to use instead of generating
  *                      (e.g. inputs captured from rust-address-fuzzer)
- *   --out FILE         JSONL mismatch log (default:
- *                      examples/rust-address-fuzzer/findings/differential-mismatches.jsonl)
+ *   --out FILE         JSONL mismatch log (default: differential-discrepancies.log)
  *   --compare-errors   also require identical parse error codes
  *   --require-all      fail instead of skipping when a toolchain is missing
  *   --dart PATH        dart executable (default: $DART or "dart")
@@ -41,20 +40,14 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const DIFF_DIR = path.join(ROOT, "examples", "rust-address-fuzzer", "differential");
-const DEFAULT_OUT = path.join(
-  ROOT,
-  "examples",
-  "rust-address-fuzzer",
-  "findings",
-  "differential-mismatches.jsonl"
-);
+const DEFAULT_OUT = path.join(ROOT, "differential-discrepancies.log");
 const ALL_LANGS = ["ts", "go", "dart"];
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
 
 function parseArgs(argv) {
   const opts = {
-    count: 10000,
+    count: 100000,
     seed: null,
     langs: null,
     corpus: null,

@@ -1,0 +1,865 @@
+{
+  "description": "Truncated M-addresses (SEP-23). Every input keeps the 'M' strkey prefix but lacks part of the 43-byte decoded body (version byte + 40-byte payload + 2-byte CRC16). Decoders MUST return INVALID_LENGTH before any base32 or checksum work, and MUST NOT panic, throw an index-out-of-range error, or read past the input.",
+  "module": "strkey_decode",
+  "expectedLengths": {
+    "M": 69,
+    "G": 56,
+    "C": 56
+  },
+  "cases": [
+    {
+      "description": "M-address truncated to 10 characters (missing 59)",
+      "input": {
+        "address": "MAYCUYT553"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 11 characters (missing 58)",
+      "input": {
+        "address": "MAYCUYT553C"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 12 characters (missing 57)",
+      "input": {
+        "address": "MAYCUYT553C5"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 13 characters (missing 56)",
+      "input": {
+        "address": "MAYCUYT553C5L"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 14 characters (missing 55)",
+      "input": {
+        "address": "MAYCUYT553C5LH"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 15 characters (missing 54)",
+      "input": {
+        "address": "MAYCUYT553C5LHV"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 16 characters (missing 53)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 17 characters (missing 52)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 18 characters (missing 51)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2X"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 19 characters (missing 50)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XP"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 20 characters (missing 49)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 21 characters (missing 48)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 22 characters (missing 47)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5G"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 23 characters (missing 46)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GM"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 24 characters (missing 45)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GME"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 25 characters (missing 44)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJ"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 26 characters (missing 43)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 27 characters (missing 42)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 28 characters (missing 41)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4B"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 29 characters (missing 40)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BX"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 30 characters (missing 39)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXG"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 31 characters (missing 38)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 32 characters (missing 37)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 33 characters (missing 36)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7A"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 34 characters (missing 35)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AH"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 35 characters (missing 34)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHM"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 36 characters (missing 33)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJ"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 37 characters (missing 32)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJW"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 38 characters (missing 31)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWL"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 39 characters (missing 30)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 40 characters (missing 29)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAP"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 41 characters (missing 28)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZ"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 42 characters (missing 27)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 43 characters (missing 26)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP5"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 44 characters (missing 25)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 45 characters (missing 24)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53K"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 46 characters (missing 23)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJ"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 47 characters (missing 22)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 48 characters (missing 21)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 49 characters (missing 20)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7E"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 50 characters (missing 19)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EI"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 51 characters (missing 18)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQ"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 52 characters (missing 17)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 53 characters (missing 16)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAC"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 54 characters (missing 15)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 55 characters (missing 14)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 56 characters (missing 13)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 57 characters (missing 12)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 58 characters (missing 11)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 59 characters (missing 10)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 60 characters (missing 9)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 61 characters (missing 8)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 62 characters (missing 7)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 63 characters (missing 6)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 64 characters (missing 5)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 65 characters (missing 4)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAA"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 66 characters (missing 3)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 67 characters (missing 2)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD6"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "M-address truncated to 68 characters (missing 1)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD67"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    },
+    {
+      "description": "control: complete 69-character M-address decodes",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672"
+      },
+      "expected": {
+        "ok": true,
+        "kind": "M",
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672"
+      },
+      "tags": [
+        "positive"
+      ]
+    },
+    {
+      "description": "M-address with one extra trailing character (70 characters)",
+      "input": {
+        "address": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672A"
+      },
+      "expected": {
+        "ok": false,
+        "error": "INVALID_LENGTH"
+      },
+      "tags": [
+        "negative",
+        "edge"
+      ]
+    }
+  ]
+}

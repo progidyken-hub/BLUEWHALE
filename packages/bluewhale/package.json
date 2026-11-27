@@ -11,20 +11,29 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./styles.css": "./dist/styles/components.css",
+    "./theme.css": "./dist/styles/theme.css",
     "./package.json": "./package.json"
   },
-  "files": ["dist"],
-  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('node:fs').cpSync('src/styles', 'dist/styles', { recursive: true })\"",
+    "size": "size-limit",
     "test": "vitest run",
     "test:watch": "vitest",
     "ladle": "ladle serve",
-    "build-storybook": "ladle build"
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "test-storybook": "test-storybook"
   },
   "dependencies": {
     "@redishfish/bluewhale-core": "workspace:^"
@@ -34,14 +43,27 @@
   },
   "devDependencies": {
     "@ladle/react": "5.1.1",
+    "@size-limit/preset-small-lib": "14.3.0",
+    "@storybook/addon-a11y": "^8.5.0",
+    "@storybook/addon-essentials": "^8.5.0",
+    "@storybook/addon-interactions": "^8.5.0",
+    "@storybook/react": "^8.5.0",
+    "@storybook/react-vite": "^8.5.0",
+    "@storybook/test": "^8.5.0",
+    "@storybook/test-runner": "^0.21.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
-    "@testing-library/user-event": "14.6.7",
+    "@testing-library/user-event": "14.6.13",
     "@types/react": "^19.3.0",
-    "jsdom": "30.1.1",
-    "react": "^19.3.0",
-    "react-dom": "19.3.0",
+    "axe-core": "4.14.1",
+    "axe-playwright": "^2.0.3",
+    "jsdom": "30.1.3",
+    "react": "^19.3.1",
+    "react-dom": "19.3.1",
+    "size-limit": "14.3.0",
+    "storybook": "^8.5.0",
     "typescript": "^7.0.2",
-    "vitest": "1.6.0"
+    "vite": "^6.0.7",
+    "vitest": "5.0.5"
   }
 }

@@ -1,0 +1,57 @@
+[
+  {
+    "description": "MEMO_HASH with 1 leading zero byte",
+    "input": {
+      "hex": "0001bcab53876440984605a3062c1761174c31d4d35c1c26fa014664da07ff0b"
+    },
+    "expected": {
+      "hex": "0001bcab53876440984605a3062c1761174c31d4d35c1c26fa014664da07ff0b",
+      "byteLength": 32,
+      "leadingZeroBytes": 1
+    }
+  },
+  {
+    "description": "MEMO_HASH with 4 leading zero bytes",
+    "input": {
+      "hex": "00000000016efbc85a21c697a419fb149b70e16f97db99b6c66e94dee6d811e0"
+    },
+    "expected": {
+      "hex": "00000000016efbc85a21c697a419fb149b70e16f97db99b6c66e94dee6d811e0",
+      "byteLength": 32,
+      "leadingZeroBytes": 4
+    }
+  },
+  {
+    "description": "MEMO_HASH with 8 leading zero bytes",
+    "input": {
+      "hex": "000000000000000001528aa0f06cf53841cbffb82ba2edb5dfa016f91505feda"
+    },
+    "expected": {
+      "hex": "000000000000000001528aa0f06cf53841cbffb82ba2edb5dfa016f91505feda",
+      "byteLength": 32,
+      "leadingZeroBytes": 8
+    }
+  },
+  {
+    "description": "MEMO_HASH with 16 leading zero bytes",
+    "input": {
+      "hex": "0000000000000000000000000000000001d0e83e21546289e93e28f3e593b5f5"
+    },
+    "expected": {
+      "hex": "0000000000000000000000000000000001d0e83e21546289e93e28f3e593b5f5",
+      "byteLength": 32,
+      "leadingZeroBytes": 16
+    }
+  },
+  {
+    "description": "MEMO_HASH with 31 leading zero bytes",
+    "input": {
+      "hex": "0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    "expected": {
+      "hex": "0000000000000000000000000000000000000000000000000000000000000001",
+      "byteLength": 32,
+      "leadingZeroBytes": 31
+    }
+  }
+]

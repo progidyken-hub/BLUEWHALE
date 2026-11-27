@@ -45,7 +45,7 @@ class StellarAddress {
   /// Throws [StellarAddressException] for invalid input or length.
   factory StellarAddress.parse(String address) {
     if (address.isEmpty) {
-      throw const StellarAddressException('Invalid address');
+      throw const StellarAddressException._('Invalid address');
     }
 
     switch (address[0].toUpperCase()) {
@@ -56,7 +56,7 @@ class StellarAddress {
       case 'C':
         return _parseContract(address);
       default:
-        throw const StellarAddressException('Invalid address');
+        throw const StellarAddressException._('Invalid address');
     }
   }
 
@@ -94,7 +94,7 @@ class StellarAddress {
 
   static void _expectKind(String address, AddressKind expectedKind) {
     if (detect(address) != expectedKind) {
-      throw const StellarAddressException('Invalid address');
+      throw const StellarAddressException._('Invalid address');
     }
   }
 

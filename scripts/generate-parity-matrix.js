@@ -386,7 +386,7 @@ function renderTable(rows) {
 
 // ─── embed in doc ────────────────────────────────────────────────────────────
 
-function embedInDoc(tableMarkdown) {
+function embedInDoc(tableMarkdown, checkOnly = false) {
   if (!fs.existsSync(DESIGN_PRINCIPLES_DOC)) {
     console.error(`Target doc not found: ${DESIGN_PRINCIPLES_DOC}`);
     process.exit(1);
@@ -413,6 +413,15 @@ function embedInDoc(tableMarkdown) {
     updated = original.trimEnd() + "\n\n" + block + "\n";
   }
 
+  if (checkOnly) {
+    if (updated !== original) {
+      console.error(`Parity matrix in ${path.relative(ROOT, DESIGN_PRINCIPLES_DOC)} is out of sync. Run: node scripts/generate-parity-matrix.js`);
+      process.exit(1);
+    }
+    console.log("Parity matrix is in sync.");
+    return;
+  }
+
   fs.writeFileSync(DESIGN_PRINCIPLES_DOC, updated, "utf8");
   console.log(`✅ Parity matrix embedded in ${path.relative(ROOT, DESIGN_PRINCIPLES_DOC)}`);
 }
@@ -430,7 +439,8 @@ function embedInDoc(tableMarkdown) {
     return;
   }
 
-  embedInDoc(tableMarkdown);
+  const checkOnly = process.argv.includes("--check");
+  embedInDoc(tableMarkdown, checkOnly);
 
   // Print a quick summary to stdout for CI logs
   const tsCount = rows.filter((r) => r.ts).length;

@@ -1,3 +1,5 @@
+import { DIGITS_ONLY } from "../patterns";
+
 /**
  * Maximum value for a 64-bit unsigned integer (uint64).
  */
@@ -36,7 +38,7 @@ export class SafeRoutingId {
       this._value = this._bigint.toString();
     } else if (typeof value === "string") {
       const trimmed = value.trim();
-      if (!/^\d+$/.test(trimmed)) {
+      if (!DIGITS_ONLY.test(trimmed)) {
         throw new TypeError(`Invalid SafeRoutingId string: "${value}". Must contain only decimal digits.`);
       }
       const b = BigInt(trimmed);

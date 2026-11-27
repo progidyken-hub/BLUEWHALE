@@ -1,0 +1,342 @@
+[
+  {
+    "description": "valid contract strkey 0 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CBGRXZEHKN3QFWQJPY2DCORSLBAMODRY4JQYSQQHM6KTHXFNYEKMOMCR"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "4d1be487537702da097e34313a325840c70e38e261894207679533dcadc114c7"
+    }
+  },
+  {
+    "description": "valid contract strkey 1 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CCC5OKJWO564JHO76JYPY35WDAB2H6U2HKAUJEKNBMSJN4ZFTCVSBSBB"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "85d72936777dc49ddff270fc6fb61803a3fa9a3a8144914d0b2496f32598ab20"
+    }
+  },
+  {
+    "description": "valid contract strkey 2 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CATF5LDW2J2CGB3KZ5UAEUVE4WXH3OLEJXOQRTOTRVKYZFFEG5DUOHGS"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "265eac76d27423076acf680252a4e5ae7db9644ddd08cdd38d558c94a4374747"
+    }
+  },
+  {
+    "description": "valid contract strkey 3 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAU4PKHMQDBZIGL6M642JCBCE7GCMLL7SWIULXNRKP3YMAYTTJISFT25"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "29c7a8ec80c394197e67b9a4882227cc262d7f959145ddb153f78603139a5122"
+    }
+  },
+  {
+    "description": "valid contract strkey 4 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CCBKU4BARICSEICKXW3LNQ7BLNX2YVK6DUGBTDG7ETEI7G2LAAJKGDQN"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "82aa70208a0522204abdb6b6c3e15b6fac555e1d0c198cdf24c88f9b4b0012a3"
+    }
+  },
+  {
+    "description": "valid contract strkey 5 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAQIJG3J3QUMR36O6F6T5XWYEOAFIKKDY5QD26XSSEJYF3EMZKNZVG27"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "20849b69dc28c8efcef17d3eded82380542943c7603d7af2911382ec8cca9b9a"
+    }
+  },
+  {
+    "description": "valid contract strkey 6 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CB7LFWOFWFU6WMR6XK7UUZN6AR2YV5KW7XMI6W2ZR7VNFM5R2B4EMB2P"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "7eb2d9c5b169eb323ebabf4a65be04758af556fdd88f5b598fead2b3b1d07846"
+    }
+  },
+  {
+    "description": "valid contract strkey 7 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CDEQ43WQBI5LTNDXAS4BSVD6MUFQ2YRSSZDYES7NXWVEBQFZASSY7YY4"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "c90e6ed00a3ab9b47704b819547e650b0d62329647824bedbdaa40c0b904a58f"
+    }
+  },
+  {
+    "description": "valid contract strkey 8 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CABIMMTTA7DM6ITN5WZVDRY7APLYSW6YFOOZ7LIAHSWCR4HST3M7OTZZ"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "0286327307c6cf226dedb351c71f03d7895bd82b9d9fad003cac28f0f29ed9f7"
+    }
+  },
+  {
+    "description": "valid contract strkey 9 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAOOUSDL67Z3ZLKLEEDLG5GYC2RRUSXFXLS4H3CUGJ4NQZLFIEUOLFM7"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "1cea486bf7f3bcad4b2106b374d816a31a4ae5bae5c3ec543278d865654128e5"
+    }
+  },
+  {
+    "description": "valid contract strkey 10 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAMOYR52VKA3NBY3AT4ZUM73BCXMFY5NVJYCUERJ4HSEACG7VPXCAJRB"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "18ec47baaa81b6871b04f99a33fb08aec2e3adaa702a1229e1e44008dfabee20"
+    }
+  },
+  {
+    "description": "valid contract strkey 11 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CCOLUAKBVT7GYVJGQWAPPP5TEEMBJOUKJSW6J4BUJKOMNZLXWVL6K76V"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "9cba0141acfe6c55268580f7bfb3211814ba8a4cade4f0344a9cc6e577b557e5"
+    }
+  },
+  {
+    "description": "valid contract strkey 12 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CCOPVRN6SHYJXYBZ3XLLUACNIGMPTD2YD3UTOEDXQMP2JUVW2QGVSGQA"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "9cfac5be91f09be039ddd6ba004d4198f98f581ee9371077831fa4d2b6d40d59"
+    }
+  },
+  {
+    "description": "valid contract strkey 13 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CBIXRUP6VK757FPLCYRWRZKHMOBPVC57SABJCF4SCM5Y7YDP7XNE5GDJ"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "5178d1feaabfdf95eb162368e5476382fa8bbf9002911792133b8fe06ffdda4e"
+    }
+  },
+  {
+    "description": "valid contract strkey 14 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CDYHOP54INI4N3KDRKO2R442NW6EXLRY32FEFT6Y6UDCIE4YSZSK7GCP"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "f0773fbc4351c6ed438a9da8f39a6dbc4bae38de8a42cfd8f5062413989664af"
+    }
+  },
+  {
+    "description": "valid contract strkey 15 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CB5YYNINYLUBCPS3KJ57BOTC7PHNZMU4F3Y6KS2PSM3IPGHIAS3FINBT"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "7b8c350dc2e8113e5b527bf0ba62fbcedcb29c2ef1e54b4f93368798e804b654"
+    }
+  },
+  {
+    "description": "valid contract strkey 16 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CDQOM6JNWAYJ62IG5Q2Q6GMACY5W3GXNX4G3BHJQKHPIGQQU3F37VTWW"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "e0e6792db0309f6906ec350f1980163b6d9aedbf0db09d3051de834214d977fa"
+    }
+  },
+  {
+    "description": "valid contract strkey 17 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CB37LRZPEFIB56MJ5XXIQO2RUBN63OESTUMMS62EG2MXZBKQXVPKHJCM"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "77f5c72f21501ef989edee883b51a05bedb8929d18c97b4436997c8550bd5ea3"
+    }
+  },
+  {
+    "description": "valid contract strkey 18 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CA3JPX2ZN3CTNQMKWWPHMMZ6UIWZS2UUX3PN3UXZUWEGBOIFNH3SWUA6"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "3697df596ec536c18ab59e76333ea22d996a94bededdd2f9a58860b90569f72b"
+    }
+  },
+  {
+    "description": "valid contract strkey 19 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAMXNZQ7JDFDN4ECQF6PA3Q7RFMWZC64XZIDL6PZ4BDCZRGIOWKC73AZ"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "1976e61f48ca36f082817cf06e1f89596c8bdcbe5035f9f9e0462cc4c875942f"
+    }
+  },
+  {
+    "description": "valid contract strkey 20 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAS7DCVW4GI3OPFQYSQS4F2E2M6QXKBNOTGUHGEDP53YPX2GIFT32UC5"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "25f18ab6e191b73cb0c4a12e1744d33d0ba82d74cd4398837f7787df464167bd"
+    }
+  },
+  {
+    "description": "valid contract strkey 21 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CD7ITXB4D64HVO6PHR3FIEFKREAAHHXEYTQGLEJEANVQ2NZN2EOS5WLP"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "fe89dc3c1fb87abbcf3c765410aa8900039ee4c4e0659124036b0d372dd11d2e"
+    }
+  },
+  {
+    "description": "valid contract strkey 22 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CDPY22EWQGZOIK4IQLPYVZQC5VIJX73TYTX25J4UMZUFJY5TPHM5YATU"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "df8d689681b2e42b8882df8ae602ed509bff73c4efaea794666854e3b379d9dc"
+    }
+  },
+  {
+    "description": "valid contract strkey 23 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CAJOFQ2O5KIWOVTIUSJ5GK6CBO2IPABJS4IHUU7HFEZW3ZD4QAIVMIXN"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "12e2c34eea91675668a493d32bc20bb487802997107a53e729336de47c801156"
+    }
+  },
+  {
+    "description": "valid contract strkey 24 (synthetic payload, SHA-256 of a label)",
+    "input": {
+      "strkey": "CBBTHZKDNNMF5KKKRJDEZUYG7M53RLVVIRDEIGZFBSIP46SQYTUZ4EBI"
+    },
+    "expected": {
+      "kind": "C",
+      "payloadHex": "4333e5436b585ea94a8a464cd306fb3bb8aeb54446441b250c90fe7a50c4e99e"
+    }
+  },
+  {
+    "description": "contract strkey 0 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CBGRXZEHKN3QFWQJPY2DCORSLBAMODRY4JQYSQQHM6KTHXFNYEKMOMCS"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 1 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CCC5OKJWO564JHO76JYPY35WDAB2H6U2HKAUJEKNBMSJN4ZFTCVSBSBD"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 2 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CATF5LDW2J2CGB3KZ5UAEUVE4WXH3OLEJXOQRTOTRVKYZFFEG5DUOHGV"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 3 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CAU4PKHMQDBZIGL6M642JCBCE7GCMLL7SWIULXNRKP3YMAYTTJISFT2B"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 4 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CCBKU4BARICSEICKXW3LNQ7BLNX2YVK6DUGBTDG7ETEI7G2LAAJKGDQS"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 5 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CAQIJG3J3QUMR36O6F6T5XWYEOAFIKKDY5QD26XSSEJYF3EMZKNZVG2F"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 6 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CB7LFWOFWFU6WMR6XK7UUZN6AR2YV5KW7XMI6W2ZR7VNFM5R2B4EMB2W"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 7 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CDEQ43WQBI5LTNDXAS4BSVD6MUFQ2YRSSZDYES7NXWVEBQFZASSY7YYE"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 8 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CABIMMTTA7DM6ITN5WZVDRY7APLYSW6YFOOZ7LIAHSWCR4HST3M7OTZC"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  },
+  {
+    "description": "contract strkey 9 with a corrupted last character: bad checksum",
+    "input": {
+      "strkey": "CAOOUSDL67Z3ZLKLEEDLG5GYC2RRUSXFXLS4H3CUGJ4NQZLFIEUOLFMJ"
+    },
+    "expected": {
+      "error": "INVALID_CHECKSUM"
+    }
+  }
+]

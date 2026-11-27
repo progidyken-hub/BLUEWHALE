@@ -1,0 +1,137 @@
+name: parity-ci
+
+# Guards spec/ on main: any change to the normative spec (including every
+# vector file under spec/vectors/*.json) must pass the TypeScript, Go and Dart
+# test runners before it can merge, and is re-checked after it lands on main.
+#
+# The three language suites run in parallel as a matrix. `fail-fast` is off so
+# one failing language never hides the result of the others, and the
+# `parity sync gate` job turns any non-success into a single failing check that
+# branch protection can require.
+#
+# Minimum GITHUB_TOKEN scope: read-only. No deployments, no secret access.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "spec/**"
+      - "packages/spec/**"
+      - ".github/workflows/parity-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spec/**"
+      - "packages/spec/**"
+      - ".github/workflows/parity-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: parity-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover-vectors:
+    name: discover spec vectors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+      # Every spec/vectors/*.json file must be well-formed, non-empty JSON
+      # before any language runner is asked to assert against it.
+      - name: Validate spec/vectors/*.json
+        run: |
+          node - <<'EOF'
+          const fs = require("fs");
+          const path = require("path");
+          const dir = path.join("spec", "vectors");
+          const files = fs.existsSync(dir)
+            ? fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort()
+            : [];
+          let failed = false;
+          for (const f of files) {
+            const rel = path.join(dir, f);
+            try {
+              const data = JSON.parse(fs.readFileSync(rel, "utf8"));
+              const count = Array.isArray(data) ? data.length : (data.cases ?? []).length;
+              if (count === 0) throw new Error("contains no vectors");
+              console.log(`ok   ${rel} (${count} vectors)`);
+            } catch (err) {
+              console.log(`::error file=${rel}::${err.message}`);
+              failed = true;
+            }
+          }
+          if (files.length === 0) console.log("no spec/vectors/*.json files found");
+          if (failed) process.exit(1);
+          EOF
+
+  check-parity-sync:
+    name: check-parity-sync (${{ matrix.language }})
+    needs: discover-vectors
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ts, go, dart]
+    env:
+      # Absolute path to the vector directory, exported for runners that load
+      # spec/vectors/*.json directly.
+      BLUEWHALE_VECTORS_DIR: ${{ github.workspace }}/spec/vectors
+    steps:
+      - uses: actions/checkout@v7
+
+      # ── TypeScript ────────────────────────────────────────────────────────
+      - if: matrix.language == 'ts'
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9
+      - if: matrix.language == 'ts'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: "pnpm"
+      - if: matrix.language == 'ts'
+        run: pnpm install --frozen-lockfile
+      - if: matrix.language == 'ts'
+        name: Run core-ts suite against spec vectors
+        run: pnpm --filter @redishfish/bluewhale-core test
+
+      # ── Go ────────────────────────────────────────────────────────────────
+      - if: matrix.language == 'go'
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: packages/core-go/go.mod
+      - if: matrix.language == 'go'
+        name: Run core-go suite against spec vectors
+        working-directory: packages/core-go
+        run: go test ./...
+
+      # ── Dart ──────────────────────────────────────────────────────────────
+      - if: matrix.language == 'dart'
+        uses: dart-lang/setup-dart@v1
+      - if: matrix.language == 'dart'
+        working-directory: packages/core-dart
+        run: dart pub get
+      - if: matrix.language == 'dart'
+        name: Run core-dart suite against spec vectors
+        working-directory: packages/core-dart
+        run: dart test
+
+  parity-sync-gate:
+    name: parity sync gate
+    runs-on: ubuntu-latest
+    needs: [discover-vectors, check-parity-sync]
+    if: always()
+    steps:
+      - name: Fail if any language suite failed a vector assertion
+        if: needs.discover-vectors.result != 'success' || needs.check-parity-sync.result != 'success'
+        run: |
+          echo "::error::Spec parity check failed: at least one language suite rejected spec/vectors."
+          echo "::error::discover-vectors:  ${{ needs.discover-vectors.result }}"
+          echo "::error::check-parity-sync: ${{ needs.check-parity-sync.result }}"
+          exit 1
+      - run: echo "TypeScript, Go and Dart all pass against spec/vectors."

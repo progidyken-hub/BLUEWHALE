@@ -1,0 +1,58 @@
+---
+title: "Deprecation Policy"
+description: "Grace periods, semver guarantees, and vector version compatibility across the TypeScript, Go, and Dart SDKs."
+---
+
+BLUEWHALE ships three SDKs (`core-ts`, `core-go`, `core-dart`) that must behave identically. This policy defines how features, warning codes, and error codes are deprecated so that existing users are never broken without notice.
+
+## Scope
+
+The policy covers:
+
+- Public API symbols in all three SDKs.
+- Warning codes and error codes (for example `NON_CANONICAL_ROUTING_ID`, `INVALID_CHECKSUM`).
+- The shape of `RoutingResult`, including `destinationError`.
+- The vector format and `spec_version` in `spec/vectors.json`.
+
+## Semver Guarantees
+
+Each SDK follows Semantic Versioning, and the SDKs are versioned in lockstep for spec-affecting changes.
+
+| Change | Version bump |
+| --- | --- |
+| Bug fix, docs, new test vectors | Patch |
+| New warning or error code, new optional field, new deprecation notice | Minor |
+| Removing or renaming a code, symbol, or field; changing existing output | Major |
+
+- Adding a new warning or error code is a minor change, so consumers must treat unknown codes as non-fatal.
+- Code strings are part of the public contract. They are never repurposed for a different meaning.
+
+## Deprecation Process
+
+1. **Announce.** Mark the item deprecated in the same minor release in every SDK: `@deprecated` (TypeScript), `// Deprecated:` (Go), `@Deprecated` (Dart). Name the replacement and the earliest removal version.
+2. **Warn.** Keep the old behavior working. Where a runtime signal is useful, emit an informational warning rather than an error.
+3. **Document.** Add a `Deprecated` entry to each SDK `CHANGELOG.md` and a migration note under `docs/migration`.
+4. **Remove.** Remove only in a major release, after the grace period below.
+
+Deprecations must land in all three SDKs together. An SDK must not remove an item before the others have deprecated it.
+
+## Grace Periods
+
+- Deprecated items stay available for at least **two minor releases and 90 days**, whichever is longer.
+- Security fixes may shorten the period; the change is then called out in the changelog.
+- A deprecated code keeps its exact string value and semantics for the entire grace period.
+
+## Vector Version Compatibility
+
+`spec_version` in `spec/vectors.json` follows the rules in [Spec Versioning](/docs/spec/versioning).
+
+- Patch and minor spec versions are backward compatible: an SDK passing spec `X.Y.Z` must pass every `X.Y'.Z'` vector where `Y' >= Y` unless the vector is tagged as covering a newer feature.
+- A vector for a deprecated behavior is kept, and tagged, until the behavior is removed in a major release.
+- Major spec versions may drop vectors. SDK majors and spec majors are released together.
+
+## Checklist for Contributors
+
+- [ ] Deprecation applied in TypeScript, Go, and Dart.
+- [ ] Replacement and removal version documented.
+- [ ] Vectors and `spec/schema.json` updated where codes are involved.
+- [ ] Changeset added (see [CONTRIBUTING](https://github.com/progidyken-hub/BLUEWHALE/blob/main/CONTRIBUTING.md)).

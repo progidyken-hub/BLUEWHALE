@@ -1,0 +1,64 @@
+# syntax=docker/dockerfile:1
+#
+# Bluewhale conformance suite.
+#
+# Runs the official test vectors against any implementation (Rust, Python,
+# Ruby, ...) through a small adapter that speaks the stdin/stdout JSON-lines
+# protocol "bluewhale-conformance/1". See docs/guides/conformance.md.
+#
+#   docker build -f Dockerfile.conformance -t bluewhale-conformance .
+#
+#   # The adapter runs inside the container. Either mount a self-contained
+#   # binary (e.g. a static Rust build):
+#   docker run --rm -v "$PWD/target/release:/impl:ro" bluewhale-conformance -- /impl/adapter
+#
+#   # or extend this image with your toolchain and adapter:
+#   FROM bluewhale-conformance
+#   RUN apt-get update && apt-get install -y --no-install-recommends python3
+#   COPY . /impl
+#   CMD ["--", "python3", "/impl/adapter.py"]
+#
+# Self-test against the core-ts reference adapter:
+#
+#   docker build -f Dockerfile.conformance --target self-test -t bluewhale-conformance:self-test .
+#   docker run --rm bluewhale-conformance:self-test
+
+ARG NODE_IMAGE=node:22-bookworm-slim
+
+# ---------------------------------------------------------------------------
+# Reference implementation build (only used by the self-test target)
+# ---------------------------------------------------------------------------
+FROM ${NODE_IMAGE} AS core-ts-build
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /repo
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/ packages/
+# The adapter only needs the CommonJS bundle, so skip type declarations.
+RUN pnpm install --frozen-lockfile --filter "@redishfish/bluewhale-core..." \
+ && cd packages/core-ts && pnpm exec tsup src/index.ts --format cjs
+
+# ---------------------------------------------------------------------------
+# Self-test: the runner driving core-ts through its reference adapter
+# ---------------------------------------------------------------------------
+FROM core-ts-build AS self-test
+COPY spec/vectors.json spec/vectors.json
+COPY spec/vectors/ spec/vectors/
+COPY scripts/conformance/ scripts/conformance/
+ENTRYPOINT ["node", "scripts/conformance/runner.mjs"]
+CMD ["--", "node", "scripts/conformance/adapters/core-ts.mjs"]
+
+# ---------------------------------------------------------------------------
+# Runner (default target): vectors + runner + adapter templates, no SDKs
+# ---------------------------------------------------------------------------
+FROM ${NODE_IMAGE} AS runner
+LABEL org.opencontainers.image.title="bluewhale-conformance" \
+      org.opencontainers.image.description="Bluewhale conformance runner (protocol bluewhale-conformance/1)"
+WORKDIR /conformance
+COPY spec/vectors.json spec/vectors.json
+COPY spec/vectors/ spec/vectors/
+COPY scripts/conformance/runner.mjs runner.mjs
+COPY scripts/conformance/adapters/template.py adapters/template.py
+ENV BLUEWHALE_SPEC_DIR=/conformance/spec
+ENTRYPOINT ["node", "/conformance/runner.mjs"]
+CMD ["--help"]

@@ -79,7 +79,7 @@ void main() {
       expect(result.source, RoutingSource.memo);
       expect(result.destinationError, isNull);
       expect(result.warnings, hasLength(1));
-      expect(result.warnings.first.code, 'memo-ignored');
+      expect(result.warnings.first.code, WarningCode.memoIgnoredForMuxed);
     });
 
     test('keeps muxed decode valid when external memo is unroutable', () {
@@ -97,7 +97,7 @@ void main() {
       expect(result.destinationError, isNull);
       expect(
         result.warnings.map((warning) => warning.code),
-        ['memo-ignored', 'MEMO_TEXT_UNROUTABLE'],
+        [WarningCode.memoIgnoredForMuxed, WarningCode.memoTextUnroutable],
       );
     });
 
@@ -141,10 +141,10 @@ void main() {
     });
   });
 
-  group('extractRouting (async)', () {
+  group('extractRoutingAsync', () {
     test('decodes muxed routing when no external memo is present', () async {
       await expectLater(
-        extractRouting(RoutingInput(destination: muxedAddress, memoType: 'none')),
+        extractRoutingAsync(RoutingInput(destination: muxedAddress, memoType: 'none')),
         completion(predicate((RoutingResult result) =>
             result.destinationBaseAccount == baseG &&
             result.id == BigInt.parse('9007199254740993') &&
@@ -156,7 +156,7 @@ void main() {
 
     test('prefers external memo over muxed routing and emits memo-ignored warning', () async {
       await expectLater(
-        extractRouting(RoutingInput(
+        extractRoutingAsync(RoutingInput(
           destination: muxedAddress,
           memoType: 'id',
           memoValue: '42',
@@ -167,13 +167,13 @@ void main() {
             result.source == RoutingSource.memo &&
             result.destinationError == null &&
             result.warnings.length == 1 &&
-            result.warnings.first.code == 'memo-ignored')),
+            result.warnings.first.code == WarningCode.memoIgnoredForMuxed)),
       );
     });
 
     test('keeps muxed decode valid when external memo is unroutable', () async {
       await expectLater(
-        extractRouting(RoutingInput(
+        extractRoutingAsync(RoutingInput(
           destination: muxedAddress,
           memoType: 'text',
           memoValue: 'not-a-routing-id',
@@ -184,14 +184,14 @@ void main() {
             result.source == RoutingSource.none &&
             result.destinationError == null &&
             result.warnings.length == 2 &&
-            result.warnings[0].code == 'memo-ignored' &&
-            result.warnings[1].code == 'MEMO_TEXT_UNROUTABLE')),
+            result.warnings[0].code == WarningCode.memoIgnoredForMuxed &&
+            result.warnings[1].code == WarningCode.memoTextUnroutable)),
       );
     });
 
     test('preserves existing non-muxed memo routing behavior', () async {
       await expectLater(
-        extractRouting(RoutingInput(
+        extractRoutingAsync(RoutingInput(
           destination: baseG,
           memoType: 'id',
           memoValue: '100',
@@ -208,14 +208,14 @@ void main() {
     test('completes with INVALID_DESTINATION warning for C-addresses', () async {
       const cAddress = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
       final result =
-          await extractRouting(RoutingInput(destination: cAddress, memoType: 'none'));
+          await extractRoutingAsync(RoutingInput(destination: cAddress, memoType: 'none'));
 
       expect(result.source, RoutingSource.none);
       expect(result.warnings, [RoutingWarning.invalidDestination]);
     });
 
     test('returns structured destinationError for empty destination (#77)', () async {
-      final result = await extractRouting(
+      final result = await extractRoutingAsync(
         RoutingInput(destination: '', memoType: 'none'),
       );
 

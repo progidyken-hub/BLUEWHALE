@@ -3,7 +3,9 @@ import { Warning, WarningSeverity } from "../address/types";
 import { parse } from "../address/parse";
 import { detect } from "../address/detect";
 import { AddressParseError } from "../address/errors";
-import { normalizeMemoTextId } from "./memo";
+import { effectiveMemoType, normalizeMemoTextId } from "./memo";
+import { withRoutingResultJSON } from "./result";
+import { DIGITS_ONLY } from "../patterns";
 
 /**
  * Numeric weight of each warning severity. This ordering is normative and is
@@ -74,10 +76,24 @@ export function isRoutableAddress(address: unknown): address is string {
  * 3. C-addresses: Returned as a structured result with an INVALID_DESTINATION warning.
  * 4. Unknown prefixes / malformed input: Returned with a destinationError.
  *
+ * The result can be passed straight to `JSON.stringify`: it carries a
+ * non-enumerable `toJSON()` that writes `routingId` as a decimal string.
+ *
  * @param input - The destination address and optional memo components.
  * @returns A result containing the base account, routing ID, source, and any warnings.
  */
 export function extractRouting(input: RoutingInput): RoutingResult {
+  return withRoutingResultJSON(extractRoutingResult(input));
+}
+
+function extractRoutingResult(rawInput: RoutingInput): RoutingResult {
+  // A blank MEMO_TEXT ("", whitespace-only or null) is treated exactly like
+  // no memo in every SDK (spec/vectors/empty-memos.json).
+  const input: RoutingInput = {
+    ...rawInput,
+    memoType: effectiveMemoType(rawInput.memoType, rawInput.memoValue),
+  };
+
   // Only throw for a non-string destination — this is a programmer error, not
   // an address-domain error, and cannot be meaningfully expressed as a
   // RoutingResult.
@@ -130,6 +146,9 @@ export function extractRouting(input: RoutingInput): RoutingResult {
     throw error;
   }
 
+  // parse() throws instead of returning kind "invalid"; this narrows the
+  // type and guards against that changing. Excluded from coverage.
+  /* v8 ignore next 8 */
   if (parsed.kind === "invalid") {
     return {
       destinationBaseAccount: null,
@@ -164,7 +183,7 @@ export function extractRouting(input: RoutingInput): RoutingResult {
 
     if (
       input.memoType === "id" ||
-      (input.memoType === "text" && /^\d+$/.test(input.memoValue ?? ""))
+      (input.memoType === "text" && DIGITS_ONLY.test(input.memoValue ?? ""))
     ) {
       warnings.push({
         code: "MEMO_PRESENT_WITH_MUXED",
@@ -204,7 +223,9 @@ export function extractRouting(input: RoutingInput): RoutingResult {
         routingId = parsedMemoId.toString();
         routingSource = "memo";
         warnings.push(...norm.warnings);
+        /* v8 ignore start */
       } catch {
+        // normalizeMemoTextId only returns digits, so BigInt() cannot throw.
         routingSource = "none";
         warnings.push(...norm.warnings);
         warnings.push({
@@ -213,6 +234,7 @@ export function extractRouting(input: RoutingInput): RoutingResult {
           message: "MEMO_ID was empty, non-numeric, or exceeded uint64 max.",
         });
       }
+      /* v8 ignore stop */
     } else {
       routingSource = "none";
       warnings.push(...norm.warnings);
@@ -236,16 +258,23 @@ export function extractRouting(input: RoutingInput): RoutingResult {
       });
     }
   } else if (input.memoType === "hash" || input.memoType === "return") {
+    // `UNSUPPORTED_MEMO_TYPE` is the normative code for a memo type that
+    // cannot carry a routing ID, and spec/schema.json requires the matching
+    // `context.memoType`. This branch previously reported
+    // `MEMO_TEXT_UNROUTABLE`, a code core-go and core-dart never emit and one
+    // the schema models as a plain generic warning with no context.
     warnings.push({
-      code: "MEMO_TEXT_UNROUTABLE",
+      code: "UNSUPPORTED_MEMO_TYPE",
       severity: "warn",
       message: `Memo type ${input.memoType} is not supported for routing.`,
+      context: { memoType: input.memoType },
     });
   } else if (input.memoType !== "none") {
     warnings.push({
-      code: "MEMO_TEXT_UNROUTABLE",
+      code: "UNSUPPORTED_MEMO_TYPE",
       severity: "warn",
       message: `Unrecognized memo type: ${input.memoType}`,
+      context: { memoType: "unknown" },
     });
   }
 

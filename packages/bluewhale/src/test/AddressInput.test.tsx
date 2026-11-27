@@ -91,6 +91,41 @@ describe('AddressInput – onValidationChange (#96)', () => {
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings[0]).toMatch(/contract/i);
   });
+
+  it.each([
+    ['en', 'Contract addresses cannot be used for standard payments.'],
+    ['es', 'Las direcciones de contrato no se pueden usar para pagos estándar.'],
+    ['fr', 'Les adresses de contrat ne peuvent pas être utilisées pour des paiements standard.'],
+    ['zh', '合约地址不能用于标准付款。'],
+    ['ru', 'Адреса контрактов нельзя использовать для стандартных платежей.'],
+  ] as const)('renders validation warnings in %s', async (locale, message) => {
+    renderComponent({ locale });
+    await userEvent.type(getAddressInput(), 'C');
+
+    expect(screen.getByText(message)).toBeInTheDocument();
+  });
+
+  it('localizes the memo warning for an M-address', async () => {
+    const user = userEvent.setup();
+    renderComponent({ locale: 'fr' });
+    const addressInput = getAddressInput();
+    await user.type(addressInput, 'GABCDE12345');
+    await user.type(screen.getByRole('textbox', { name: /memo/i }), '123');
+    await user.clear(addressInput);
+    await user.type(addressInput, 'M');
+
+    expect(screen.getByText("Le mémo est ignoré avec une adresse M (l'identifiant de routage est intégré à l'adresse).")).toBeInTheDocument();
+  });
+
+  it('allows custom validation message overrides', async () => {
+    renderComponent({
+      locale: 'fr',
+      translations: { contractAddressWarning: 'Custom contract warning.' },
+    });
+    await userEvent.type(getAddressInput(), 'C');
+
+    expect(screen.getByText('Custom contract warning.')).toBeInTheDocument();
+  });
 });
 
 // ─── #95 – showCopyButton ─────────────────────────────────────────────────────
@@ -143,7 +178,31 @@ describe('AddressInput – showCopyButton (#95)', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/✓ Copied!/i)).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Copied!');
     });
+  });
+
+  it('uses the legacy clipboard fallback when the Clipboard API is unavailable', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: undefined,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'isSecureContext', {
+      value: false,
+      configurable: true,
+    });
+    const execCommand = vi.fn().mockReturnValue(true);
+    Object.defineProperty(document, 'execCommand', {
+      value: execCommand,
+      configurable: true,
+    });
+
+    renderComponent({ showCopyButton: true });
+    await userEvent.type(getAddressInput(), MOCK_ADDRESS);
+    await userEvent.click(screen.getAllByRole('button', { name: /copy/i })[0]);
+
+    expect(execCommand).toHaveBeenCalledWith('copy');
+    expect(screen.getByRole('status')).toHaveTextContent('Copied!');
   });
 
   it('shows copy button for routing ID when memo is provided', async () => {
@@ -190,6 +249,20 @@ describe('BEM class names on sub-components', () => {
     const { container } = renderComponent();
     await userEvent.type(getAddressInput(), 'G');
     expect(container.querySelector('.bw-type-badge--g')).toBeInTheDocument();
+  });
+
+  it('updates the address type badge when the input prefix changes', () => {
+    renderComponent();
+    const input = getAddressInput();
+
+    fireEvent.change(input, { target: { value: 'G' } });
+    expect(screen.getByRole('img', { name: /classic address/i })).toHaveTextContent('Classic');
+
+    fireEvent.change(input, { target: { value: 'M' } });
+    expect(screen.getByRole('img', { name: /muxed address/i })).toHaveTextContent('Muxed');
+
+    fireEvent.change(input, { target: { value: 'C' } });
+    expect(screen.getByRole('img', { name: /contract address/i })).toHaveTextContent('Contract');
   });
 
   it('WarningList has bw-warning-list class and items have bw-warning-item', async () => {

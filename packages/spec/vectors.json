@@ -1,5 +1,5 @@
 {
-  "spec_version": "1.2.0",
+  "spec_version": "1.3.0",
   "cases": [
     {
       "module": "muxed_encode",
@@ -72,10 +72,7 @@
         "baseG": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
         "id": "0"
       },
-      "tags": [
-        "positive",
-        "edge"
-      ]
+      "tags": ["positive", "edge"]
     },
     {
       "module": "muxed_decode",
@@ -88,10 +85,7 @@
         "baseG": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
         "id": "1"
       },
-      "tags": [
-        "positive",
-        "edge"
-      ]
+      "tags": ["positive", "edge"]
     },
     {
       "module": "muxed_decode",
@@ -104,11 +98,7 @@
         "baseG": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
         "id": "9007199254740992"
       },
-      "tags": [
-        "positive",
-        "edge",
-        "interop"
-      ]
+      "tags": ["positive", "edge", "interop"]
     },
     {
       "module": "muxed_decode",
@@ -121,11 +111,7 @@
         "baseG": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
         "id": "9007199254740993"
       },
-      "tags": [
-        "positive",
-        "edge",
-        "interop"
-      ]
+      "tags": ["positive", "edge", "interop"]
     },
     {
       "module": "muxed_decode",
@@ -138,11 +124,7 @@
         "baseG": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
         "id": "18446744073709551615"
       },
-      "tags": [
-        "positive",
-        "edge",
-        "interop"
-      ]
+      "tags": ["positive", "edge", "interop"]
     },
     {
       "module": "muxed_decode",
@@ -153,10 +135,7 @@
       "expected": {
         "expected_error": "invalid encoded string"
       },
-      "tags": [
-        "negative",
-        "edge"
-      ]
+      "tags": ["negative", "edge"]
     },
     {
       "module": "detect",
@@ -179,10 +158,7 @@
           }
         ]
       },
-      "tags": [
-        "negative",
-        "edge"
-      ]
+      "tags": ["negative", "edge"]
     },
     {
       "module": "extract_routing",
@@ -197,10 +173,7 @@
         "routingSource": "muxed",
         "warnings": []
       },
-      "tags": [
-        "positive",
-        "interop"
-      ]
+      "tags": ["positive", "interop"]
     },
     {
       "module": "extract_routing",
@@ -224,9 +197,7 @@
           }
         ]
       },
-      "tags": [
-        "negative"
-      ]
+      "tags": ["negative"]
     },
     {
       "module": "extract_routing",
@@ -242,9 +213,7 @@
         "routingSource": "memo",
         "warnings": []
       },
-      "tags": [
-        "positive"
-      ]
+      "tags": ["positive"]
     },
     {
       "module": "extract_routing",
@@ -260,9 +229,7 @@
         "routingSource": "memo",
         "warnings": []
       },
-      "tags": [
-        "positive"
-      ]
+      "tags": ["positive"]
     },
     {
       "module": "extract_routing",
@@ -288,10 +255,7 @@
           }
         ]
       },
-      "tags": [
-        "negative",
-        "edge"
-      ]
+      "tags": ["negative", "edge"]
     },
     {
       "module": "extract_routing",

@@ -17,6 +17,23 @@ Part of a multi-language suite also available in **[TypeScript](https://github.c
 
 ---
 
+## Zero External Dependencies
+
+`core-go` is committed to **zero external dependencies**. Its `go.mod` must
+never declare a third-party `require` directive — only the Go standard library
+is allowed. This keeps the package auditable, supply-chain safe, and trivially
+embeddable.
+
+CI enforces this commitment on every change:
+
+- `go list -m all` must list only the module itself.
+- Any external `require` directive in `packages/core-go/go.mod` fails the build.
+
+If you need functionality that would otherwise pull in a dependency, implement
+it against the standard library instead.
+
+---
+
 ## Quick Start
 
 ```go
@@ -87,6 +104,40 @@ the same machine measured:
 | `BenchmarkDecodeMuxed` | 623 | 7 |
 | `BenchmarkExtractRouting_GAddr_MemoID` | 560 | 6 |
 | `BenchmarkExtractRouting_MAddr` | 2304 | 21 |
+
+### Sustained Routing Benchmark (100,000 iterations)
+
+`BenchmarkRoutingSustained` drives the routing hot path under continuous load
+to surface memory growth and leaks. It is compatible with Go's standard pprof
+flags for CPU and memory profile generation.
+
+Run the sustained benchmark:
+
+```bash
+go test ./routing -run '^$' -bench BenchmarkRoutingSustained -benchmem
+```
+
+Generate CPU and memory profiles:
+
+```bash
+go test ./routing -run '^$' -bench BenchmarkRoutingSustained -benchmem \
+	-cpuprofile cpu.out -memprofile mem.out
+```
+
+Inspect the profiles with the pprof tool:
+
+```bash
+go tool pprof -http=:8080 cpu.out
+go tool pprof -http=:8080 mem.out
+```
+
+For a deterministic fixed 100,000-iteration loop (useful for stable memory
+profiles), use `BenchmarkRoutingSustained100k`:
+
+```bash
+go test ./routing -run '^$' -bench BenchmarkRoutingSustained100k -benchmem \
+	-cpuprofile cpu.out -memprofile mem.out
+```
 
 ## Examples
 

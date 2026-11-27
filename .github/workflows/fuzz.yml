@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
   pull_request:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
 
 jobs:
   fuzz:
@@ -26,6 +29,22 @@ jobs:
         with:
           name: fuzzer-findings
           path: examples/rust-address-fuzzer/findings/
+
+      - name: Notify Slack / Discord on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg text "🚨 *Nightly Fuzzing Failure* in \`${{ github.repository }}\` (job: \`rust-address-fuzzer\`, ref: \`${{ github.ref_name }}\`) — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>" \
+            '{text: $text, content: $text}')
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL" || true
+          fi
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$DISCORD_WEBHOOK_URL" || true
+          fi
 
   differential:
     name: Differential detect/parse (TS vs Go vs Dart)

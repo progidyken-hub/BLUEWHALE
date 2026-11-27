@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "examples/react-demo/**"
+      - "examples/react-deposit-form/**"
       - "packages/bluewhale/**"
       - ".github/workflows/ci-react-demo.yml"
 
@@ -36,3 +37,27 @@ jobs:
 
       - name: TypeScript compile + Vite build
         run: npm run build
+
+  react-deposit-form:
+    name: React Hook Form deposit example – TypeScript & Vite build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build local Bluewhale packages
+        run: |
+          pnpm --filter @redishfish/bluewhale-core build
+          pnpm --filter @redishfish/bluewhale build
+      - name: Install example dependencies
+        run: npm ci
+        working-directory: examples/react-deposit-form
+      - name: TypeScript compile + Vite build
+        run: npm run build
+        working-directory: examples/react-deposit-form

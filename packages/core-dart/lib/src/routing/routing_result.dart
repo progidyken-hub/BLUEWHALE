@@ -4,7 +4,7 @@
 /// never have to push 64-bit routing IDs through a JS `Number`.
 library;
 
-import '../address/codes.dart' show WarningSeverity;
+import '../address/codes.dart' show WarningCode, WarningContext, WarningSeverity;
 import 'safe_routing_id.dart';
 
 /// Identifies the mechanism used to resolve a routing ID.
@@ -31,65 +31,63 @@ enum RoutingSource {
   }
 }
 
-/// Severity levels for routing warnings, ordered from least to most severe.
-///
-/// Used with [RoutingInput.minSeverityLevel] to filter warnings by importance.
-enum WarningSeverity {
-  /// Informational notice; no action required.
-  info,
-
-  /// Potential problem that may need attention.
-  warn,
-
-  /// Serious problem; the payment should not be credited automatically.
-  error;
-
-  /// Parses a wire severity string (`info`, `warn`, `error`).
-  ///
-  /// Returns `null` for unrecognized values.
-  static WarningSeverity? tryParse(String value) {
-    for (final s in WarningSeverity.values) {
-      if (s.name == value) return s;
-    }
-    return null;
-  }
-}
-
 /// Represents a non-blocking notification emitted during routing resolution.
 class RoutingWarning {
   /// The unique code identifying the warning type.
+  ///
+  /// Always one of the normative [WarningCode] strings, so it serializes
+  /// byte-for-byte identically to core-ts and core-go.
   final String code;
 
-  /// The severity of the warning (info, warn, error).
+  /// The severity of the warning (`info`, `warn` or `error`).
   final String severity;
 
   /// A descriptive message explaining the warning.
   final String message;
+
+  /// Optional extra detail required by some codes.
+  ///
+  /// `INVALID_DESTINATION` requires `destinationKind: 'C'` and
+  /// `UNSUPPORTED_MEMO_TYPE` requires `memoType` to be one of `hash`,
+  /// `return` or `unknown`; `spec/schema.json` rejects those warnings when
+  /// [context] is missing. Every other code must leave it `null`, because
+  /// the schema forbids additional properties on a generic warning.
+  final WarningContext? context;
 
   /// Creates a warning. See [WarningSeverity] for valid [severity] values.
   const RoutingWarning({
     required this.code,
     required this.severity,
     required this.message,
+    this.context,
   });
 
   /// Emitted when a memo is present but ignored because the destination is a muxed address.
   static const memoIgnored = RoutingWarning(
-    code: 'memo-ignored',
+    code: WarningCode.memoIgnoredForMuxed,
     severity: WarningSeverity.info,
-    message: 'Memo ignored for muxed address',
+    message: 'Memo present with M-address. Any potential routing ID in memo is ignored.',
+  );
+
+  /// Emitted when both an M-address and a routable memo were supplied; the
+  /// M-address ID takes precedence.
+  static const memoPresentWithMuxed = RoutingWarning(
+    code: WarningCode.memoPresentWithMuxed,
+    severity: WarningSeverity.warn,
+    message:
+        'Routing ID found in both M-address and Memo. M-address ID takes precedence.',
   );
 
   /// Emitted when the transaction sender is detected as a smart contract.
   static const contractSender = RoutingWarning(
-    code: 'CONTRACT_SENDER_DETECTED',
-    severity: 'info',
+    code: WarningCode.contractSenderDetected,
+    severity: WarningSeverity.info,
     message: 'Contract source detected. Routing state cleared.',
   );
 
   /// Emitted when SEP-0029 requires a memo but no routing ID was supplied.
   static const missingRequiredMemo = RoutingWarning(
-    code: 'MISSING_REQUIRED_MEMO',
+    code: WarningCode.missingRequiredMemo,
     severity: WarningSeverity.error,
     message: 'Destination account requires a memo, but no routing ID was provided.',
   );
@@ -97,14 +95,45 @@ class RoutingWarning {
   /// Emitted when the destination is a contract (C) address, which cannot
   /// receive classic payments.
   static const invalidDestination = RoutingWarning(
-    code: 'INVALID_DESTINATION',
-    severity: 'error',
+    code: WarningCode.invalidDestination,
+    severity: WarningSeverity.error,
     message: 'C address is not a valid destination',
+    context: WarningContext(destinationKind: 'C'),
   );
+
+  /// Deserializes a warning written by [toJson].
+  ///
+  /// Accepts any [Map] with string keys, including the `Map<dynamic, dynamic>`
+  /// that Hive and some platform channels hand back, not just the
+  /// `Map<String, dynamic>` produced by `jsonDecode`. Missing fields fall back
+  /// to empty strings and `info` severity rather than throwing, so a cached
+  /// result written by an older version still loads.
+  factory RoutingWarning.fromJson(Map<Object?, Object?> json) {
+    return RoutingWarning(
+      code: json['code'] as String? ?? '',
+      severity: json['severity'] as String? ?? WarningSeverity.info,
+      message: json['message'] as String? ?? '',
+      context: _warningContextFromJson(json['context']),
+    );
+  }
 
   /// The parsed [WarningSeverity] of this warning, or `null` if [severity]
   /// is not a recognized level.
-  WarningSeverity? get severityLevel => WarningSeverity.tryParse(severity);
+  String? get severityLevel => WarningSeverity.tryParse(severity);
+
+  /// Serializes this warning to the JSON shape defined by
+  /// `spec/schema.json`.
+  ///
+  /// The `context` key is present only when [context] is non-null, which is
+  /// exactly when the schema's `oneOf` branch for [code] requires it.
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'code': code,
+      'severity': severity,
+      'message': message,
+      if (context != null) 'context': context!.toJson(),
+    };
+  }
 
   @override
   String toString() => '[$severity] $code: $message';
@@ -116,10 +145,11 @@ class RoutingWarning {
           runtimeType == other.runtimeType &&
           code == other.code &&
           severity == other.severity &&
-          message == other.message;
+          message == other.message &&
+          context == other.context;
 
   @override
-  int get hashCode => Object.hash(code, severity, message);
+  int get hashCode => Object.hash(code, severity, message, context);
 }
 
 /// Details of a terminal error encountered during destination account parsing.
@@ -132,6 +162,33 @@ class DestinationError {
 
   /// Creates a destination error.
   DestinationError({required this.code, required this.message});
+
+  /// Deserializes an error written by [toJson]. Accepts any [Map] with string
+  /// keys (see [RoutingWarning.fromJson]).
+  factory DestinationError.fromJson(Map<Object?, Object?> json) {
+    return DestinationError(
+      code: json['code'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+    );
+  }
+
+  /// Serializes this error as `{code, message}`, the shape used under
+  /// `destinationError` in [RoutingResult.toJson].
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'code': code,
+        'message': message,
+      };
+
+  @override
+  String toString() => 'DestinationError($code: $message)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DestinationError && code == other.code && message == other.message;
+
+  @override
+  int get hashCode => Object.hash(code, message);
 }
 
 /// Exception thrown when the routing input is fundamentally malformed.
@@ -177,6 +234,8 @@ class RoutingInput {
   /// the result. Defaults to `info` (all warnings are returned).
   final String? minSeverityLevel;
 
+  /// Creates an input. [memoValue], [sourceAccount] and [minSeverityLevel]
+  /// are optional; see [RoutingResult] for how the result is produced.
   RoutingInput({
     required this.destination,
     required this.memoType,
@@ -225,6 +284,34 @@ final class RoutingResult {
     this.destinationError,
   }) : warnings = List.unmodifiable(warnings ?? const []);
 
+  /// Sentinel for [copyWith]: lets a nullable field be kept or cleared.
+  static const Object _unset = Object();
+
+  /// Returns a copy with the given fields replaced. Immutable: the receiver is
+  /// unchanged.
+  ///
+  /// Omit [id], [destinationBaseAccount] or [destinationError] to keep the
+  /// current value. Pass `null` to clear it, or a value to replace it.
+  RoutingResult copyWith({
+    RoutingSource? source,
+    Object? id = _unset,
+    List<RoutingWarning>? warnings,
+    Object? destinationBaseAccount = _unset,
+    Object? destinationError = _unset,
+  }) {
+    return RoutingResult(
+      source: source ?? this.source,
+      id: identical(id, _unset) ? this.id : id as BigInt?,
+      warnings: warnings ?? this.warnings,
+      destinationBaseAccount: identical(destinationBaseAccount, _unset)
+          ? this.destinationBaseAccount
+          : destinationBaseAccount as String?,
+      destinationError: identical(destinationError, _unset)
+          ? this.destinationError
+          : destinationError as DestinationError?,
+    );
+  }
+
   /// Serializes this result to a JSON-compatible map.
   ///
   /// JSON key names are harmonized with the Go and TypeScript implementations:
@@ -234,6 +321,11 @@ final class RoutingResult {
   /// - [warnings]             → `"warnings"`
   /// - [destinationError]     → `"destinationError"` (or absent when null)
   ///
+  /// Warning objects serialize as `code`/`severity`/`message` plus a
+  /// `context` object when — and only when — the code requires one
+  /// (`INVALID_DESTINATION`, `UNSUPPORTED_MEMO_TYPE`), matching the
+  /// `oneOf` branches in `spec/schema.json`.
+  ///
   /// The routing ID is always serialized as a **decimal string** — never as a
   /// JS `Number` — so the exact uint64 value survives across isolate boundaries
   /// and platform channels on Flutter Web.
@@ -242,18 +334,8 @@ final class RoutingResult {
       'destinationBaseAccount': destinationBaseAccount,
       'routingId': id?.toString(),
       'routingSource': source.name,
-      'warnings': warnings
-          .map((w) => <String, dynamic>{
-                'code': w.code,
-                'severity': w.severity,
-                'message': w.message,
-              })
-          .toList(),
-      if (destinationError != null)
-        'destinationError': <String, dynamic>{
-          'code': destinationError!.code,
-          'message': destinationError!.message,
-        },
+      'warnings': warnings.map((w) => w.toJson()).toList(),
+      if (destinationError != null) 'destinationError': destinationError!.toJson(),
     };
   }
 
@@ -265,7 +347,17 @@ final class RoutingResult {
   ///
   /// The routing ID is parsed from a **decimal string** using [SafeRoutingId]
   /// to guarantee bit-exact values on Flutter Web.
-  factory RoutingResult.fromJson(Map<String, dynamic> json) {
+  ///
+  /// [json] may be any [Map] with string keys. `jsonDecode` returns
+  /// `Map<String, dynamic>`, but Hive and some platform channels return
+  /// `Map<dynamic, dynamic>` for the result and for every nested warning and
+  /// error; both shapes load identically.
+  ///
+  /// ```dart
+  /// await box.put('lastRouting', result.toJson());
+  /// final cached = RoutingResult.fromJson(box.get('lastRouting') as Map);
+  /// ```
+  factory RoutingResult.fromJson(Map<Object?, Object?> json) {
     // Parse routingSource enum
     final sourceName = json['routingSource'] as String? ?? 'none';
     final source = RoutingSource.values.firstWhere(
@@ -287,25 +379,14 @@ final class RoutingResult {
     final warnings = <RoutingWarning>[];
     if (rawWarnings is List) {
       for (final w in rawWarnings) {
-        if (w is Map<String, dynamic>) {
-          warnings.add(RoutingWarning(
-            code: w['code'] as String? ?? '',
-            severity: w['severity'] as String? ?? 'info',
-            message: w['message'] as String? ?? '',
-          ));
-        }
+        if (w is Map) warnings.add(RoutingWarning.fromJson(w));
       }
     }
 
     // Parse optional destinationError
-    DestinationError? destinationError;
     final rawError = json['destinationError'];
-    if (rawError is Map<String, dynamic>) {
-      destinationError = DestinationError(
-        code: rawError['code'] as String? ?? '',
-        message: rawError['message'] as String? ?? '',
-      );
-    }
+    final destinationError =
+        rawError is Map ? DestinationError.fromJson(rawError) : null;
 
     return RoutingResult(
       source: source,
@@ -362,12 +443,12 @@ final class RoutingResult {
           source == other.source &&
           id == other.id &&
           destinationBaseAccount == other.destinationBaseAccount &&
-          destinationError?.code == other.destinationError?.code &&
+          destinationError == other.destinationError &&
           _listEquals(warnings, other.warnings);
 
   @override
   int get hashCode => Object.hash(source, id, destinationBaseAccount,
-      destinationError?.code, Object.hashAll(warnings));
+      destinationError, Object.hashAll(warnings));
 
   static bool _listEquals(List<RoutingWarning> a, List<RoutingWarning> b) {
     if (a.length != b.length) return false;
@@ -376,4 +457,19 @@ final class RoutingResult {
     }
     return true;
   }
+}
+
+/// Reads a `context` object out of a deserialized warning.
+///
+/// Returns `null` for a missing or empty object so a warning without context
+/// round-trips through [RoutingResult.toJson] unchanged.
+WarningContext? _warningContextFromJson(Object? raw) {
+  if (raw is! Map) return null;
+  final destinationKind = raw['destinationKind'];
+  final memoType = raw['memoType'];
+  if (destinationKind == null && memoType == null) return null;
+  return WarningContext(
+    destinationKind: destinationKind as String?,
+    memoType: memoType as String?,
+  );
 }

@@ -33,6 +33,7 @@ For full technical specifications, architecture deep-dives, and API references, 
 
 - **[Quickstart](https://bluewhale.mintlify.app/docs/quickstart)**: Get running in under 60 seconds.
 - **[Routing Logic](https://bluewhale.mintlify.app/docs/concepts/routing-logic)**: Complete reference of all routing scenarios.
+- **[Deposit routing state machine](spec/routing-state-machine.md)**: Decision points for reconciling a memo with a muxed address.
 - **[Common Mistakes](https://bluewhale.mintlify.app/docs/common-mistakes)**: Avoid the 6 most common integration pitfalls.
 - **[Language Guides](https://bluewhale.mintlify.app/docs/guides/go-deposit-routing)**: Specialized guides for Go, TypeScript, and Flutter.
 - **[React UI Guide](https://bluewhale.mintlify.app/docs/guides/react-address-input)**: Drop-in address input components for React apps.

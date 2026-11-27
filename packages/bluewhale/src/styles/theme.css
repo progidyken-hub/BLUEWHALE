@@ -1,0 +1,16 @@
+:root {
+  color-scheme: light dark;
+  --bw-bg: #ffffff;
+  --bw-border: #cbd5e1;
+  --bw-text: #1e293b;
+  --bw-warning: #92400e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bw-bg: #0f172a;
+    --bw-border: #475569;
+    --bw-text: #e2e8f0;
+    --bw-warning: #fbbf24;
+  }
+}

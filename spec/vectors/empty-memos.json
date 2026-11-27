@@ -1,0 +1,287 @@
+{
+  "vector_version": "1.0.0",
+  "description": "Normative handling of empty MEMO_TEXT values. A MEMO_TEXT whose value is omitted, null, \"\" or only ASCII whitespace (space, tab, LF, CR) MUST resolve to memo type none in every SDK: no routing ID from the memo and no memo-related warnings (MEMO_TEXT_UNROUTABLE, MEMO_IGNORED_FOR_MUXED), for G and M destinations alike. Non-ASCII whitespace is content. Go has no null string, so runners map null/omitted to \"\". Warnings are compared by code and severity, in order.",
+  "cases": [
+    {
+      "id": "g-text-omitted",
+      "description": "MEMO_TEXT with memoValue omitted on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-null",
+      "description": "MEMO_TEXT with memoValue null on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": null
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-empty",
+      "description": "MEMO_TEXT empty string on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": ""
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-space",
+      "description": "MEMO_TEXT single space on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": " "
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-spaces",
+      "description": "MEMO_TEXT multiple spaces on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": "   "
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-tab",
+      "description": "MEMO_TEXT single tab on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": "\t"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-lf",
+      "description": "MEMO_TEXT single LF on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": "\n"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-crlf",
+      "description": "MEMO_TEXT CRLF on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": "\r\n"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-mixed-ascii-ws",
+      "description": "MEMO_TEXT mixed ASCII whitespace on a G destination is treated as no memo",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": " \t\r\n \t"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "m-text-null",
+      "description": "MEMO_TEXT with memoValue null on an M destination is treated as no memo (no MEMO_IGNORED_FOR_MUXED)",
+      "input": {
+        "destination": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "memoType": "text",
+        "memoValue": null
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": "0",
+        "routingSource": "muxed"
+      }
+    },
+    {
+      "id": "m-text-empty",
+      "description": "MEMO_TEXT empty string on an M destination is treated as no memo (no MEMO_IGNORED_FOR_MUXED)",
+      "input": {
+        "destination": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "memoType": "text",
+        "memoValue": ""
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": "0",
+        "routingSource": "muxed"
+      }
+    },
+    {
+      "id": "m-text-space",
+      "description": "MEMO_TEXT single space on an M destination is treated as no memo (no MEMO_IGNORED_FOR_MUXED)",
+      "input": {
+        "destination": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "memoType": "text",
+        "memoValue": " "
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": "0",
+        "routingSource": "muxed"
+      }
+    },
+    {
+      "id": "m-text-crlf",
+      "description": "MEMO_TEXT CRLF on an M destination is treated as no memo (no MEMO_IGNORED_FOR_MUXED)",
+      "input": {
+        "destination": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672",
+        "memoType": "text",
+        "memoValue": "\r\n"
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": "0",
+        "routingSource": "muxed"
+      }
+    },
+    {
+      "id": "g-none-empty",
+      "description": "memoType none with an empty memoValue stays none",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "none",
+        "memoValue": ""
+      },
+      "expected": {
+        "effectiveMemoType": "none",
+        "warnings": [],
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none"
+      }
+    },
+    {
+      "id": "g-text-nbsp",
+      "description": "control: U+00A0 NO-BREAK SPACE is not ASCII whitespace, so the memo is non-blank and unroutable",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": " "
+      },
+      "expected": {
+        "effectiveMemoType": "text",
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none",
+        "warnings": [
+          {
+            "code": "MEMO_TEXT_UNROUTABLE",
+            "severity": "warn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g-text-padded-digits",
+      "description": "control: digits padded with spaces are non-blank and stay unroutable (memo whitespace parity)",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": " 123 "
+      },
+      "expected": {
+        "effectiveMemoType": "text",
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": null,
+        "routingSource": "none",
+        "warnings": [
+          {
+            "code": "MEMO_TEXT_UNROUTABLE",
+            "severity": "warn"
+          }
+        ]
+      }
+    },
+    {
+      "id": "g-text-zero",
+      "description": "control: \"0\" is non-blank and routes to ID 0",
+      "input": {
+        "destination": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "memoType": "text",
+        "memoValue": "0"
+      },
+      "expected": {
+        "effectiveMemoType": "text",
+        "destinationBaseAccount": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+        "routingId": "0",
+        "routingSource": "memo",
+        "warnings": []
+      }
+    }
+  ]
+}

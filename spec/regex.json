@@ -1,0 +1,113 @@
+{
+  "regex_version": "1.0.0",
+  "description": "Normative, engine-portable regular expressions for Bluewhale address and routing-ID shape checks. Every pattern is written in the common subset of ECMAScript RegExp (JS/TS), Dart RegExp, Go regexp (RE2) and PCRE/Perl, and every test case below MUST produce the same result in all of them. These are shape pre-filters only: a match does NOT prove a StrKey checksum is valid, so implementations MUST still decode and verify the CRC16 checksum.",
+  "portability_rules": [
+    "Patterns are applied to the input AFTER the normative trim + uppercase canonicalization (spec/README.md, rule 5). They never trim or case-fold themselves.",
+    "No flags. Never compile these patterns with case-insensitive, multiline, dotall, unicode or extended modes.",
+    "Anchors: patterns use ^ and $. In ECMAScript, Dart and Go (RE2) without the multiline flag, $ matches only at the very end of input. In PCRE, Perl and Python, $ ALSO matches before a trailing newline, so those engines MUST use the pcre_pattern form (\\A ... \\z) or a full-match API (Python re.fullmatch, PCRE2_ANCHORED | PCRE2_ENDANCHORED). A trailing newline MUST never be accepted.",
+    "Character classes are explicit ASCII ranges ([A-Z2-7], [0-9]). Shorthand classes (\\d, \\w, \\s, \\b) and . are forbidden: their meaning differs across engines and Unicode modes (e.g. \\d matches Arabic-Indic digits in .NET and Python str patterns).",
+    "Every quantifier is bounded ({m} or {m,n}); *, + and unbounded {m,} are forbidden. No quantified groups, backreferences or lookaround (RE2 does not support them, and they are the source of catastrophic backtracking).",
+    "Only non-capturing groups (?:...) are allowed, so capture-group numbering never differs between engines."
+  ],
+  "redos": {
+    "statement": "All patterns are anchored, contain no nested or unbounded quantifiers, and only apply bounded quantifiers to single character classes. Matching is therefore O(n) in the input length on backtracking engines (PCRE, V8, Dart) and guaranteed linear on RE2. scripts/check-regex-spec.js enforces these structural rules and times adversarial inputs.",
+    "adversarial_input_length": 100000,
+    "max_match_ms": 50
+  },
+  "patterns": {
+    "account_id": {
+      "description": "Ed25519 account (G...) StrKey: 56 base32 characters. Version byte 6<<3 fixes the first character to G and the second to A-D.",
+      "pattern": "^G[A-D][A-Z2-7]{54}$",
+      "pcre_pattern": "\\AG[A-D][A-Z2-7]{54}\\z",
+      "length": 56
+    },
+    "muxed_account": {
+      "description": "SEP-23 muxed account (M...) StrKey: 69 base32 characters (43 bytes). Version byte 12<<3 fixes the second character to A-D; 43 bytes leave 1 zero padding bit, so the final character encodes an even value.",
+      "pattern": "^M[A-D][A-Z2-7]{66}[ACEGIKMOQSUWY246]$",
+      "pcre_pattern": "\\AM[A-D][A-Z2-7]{66}[ACEGIKMOQSUWY246]\\z",
+      "length": 69
+    },
+    "contract_id": {
+      "description": "Soroban contract (C...) StrKey: 56 base32 characters. Version byte 2<<3 fixes the second character to A-D.",
+      "pattern": "^C[A-D][A-Z2-7]{54}$",
+      "pcre_pattern": "\\AC[A-D][A-Z2-7]{54}\\z",
+      "length": 56
+    },
+    "routing_id_canonical": {
+      "description": "Canonical decimal routing ID as emitted in results: no sign, no leading zeros (except the single value 0), at most 20 digits. The uint64 upper bound (18446744073709551615) MUST still be checked numerically.",
+      "pattern": "^(?:0|[1-9][0-9]{0,19})$",
+      "pcre_pattern": "\\A(?:0|[1-9][0-9]{0,19})\\z"
+    },
+    "memo_numeric": {
+      "description": "Numeric MEMO_ID / MEMO_TEXT payload accepted for routing before canonicalization: ASCII digits only, leading zeros allowed (they trigger NON_CANONICAL_ROUTING_ID), at most 28 bytes (the MEMO_TEXT limit).",
+      "pattern": "^[0-9]{1,28}$",
+      "pcre_pattern": "\\A[0-9]{1,28}\\z"
+    }
+  },
+  "cases": [
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI", "match": true, "description": "canonical G address" },
+    { "pattern": "account_id", "input": "GDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD", "match": true, "description": "upper boundary of second character (D)" },
+    { "pattern": "account_id", "input": "GEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "match": false, "description": "second character E is outside A-D" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS", "match": false, "description": "55 characters (one short)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSIA", "match": false, "description": "57 characters (one long)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI\n", "match": false, "description": "trailing LF: PCRE/Perl/Python $ would accept this" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI\r\n", "match": false, "description": "trailing CRLF" },
+    { "pattern": "account_id", "input": "\nGAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI", "match": false, "description": "leading LF: multiline ^ would accept this" },
+    { "pattern": "account_id", "input": " GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI", "match": false, "description": "leading space (regex never trims)" },
+    { "pattern": "account_id", "input": "gaycuyt553c5lhve2xpw5gmejt4bxgm7ahmjwlapzp53kjo7eiqadrsi", "match": false, "description": "lowercase (regex never case-folds)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS1", "match": false, "description": "digit 1 is not base32" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS0", "match": false, "description": "digit 0 is not base32" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS8", "match": false, "description": "digit 8 is not base32" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS=", "match": false, "description": "base32 padding character" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSА", "match": false, "description": "Cyrillic capital A homoglyph (U+0410)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSＡ", "match": false, "description": "fullwidth Latin A (U+FF21)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS ", "match": false, "description": "Unicode line separator (U+2028)" },
+    { "pattern": "account_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRS\u0000", "match": false, "description": "embedded NUL" },
+    { "pattern": "account_id", "input": "", "match": false, "description": "empty string" },
+    { "pattern": "account_id", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672", "match": false, "description": "M address does not match account_id" },
+
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672", "match": true, "description": "canonical M address (id=0)" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAHOO2", "match": true, "description": "canonical M address (id=1)" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD673", "match": false, "description": "final character 3 encodes an odd value (non-zero padding bit)" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD67B", "match": false, "description": "final character B encodes an odd value" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD67", "match": false, "description": "68 characters (one short)" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672A", "match": false, "description": "70 characters (one long)" },
+    { "pattern": "muxed_account", "input": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672\n", "match": false, "description": "trailing LF" },
+    { "pattern": "muxed_account", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI", "match": false, "description": "G address does not match muxed_account" },
+
+    { "pattern": "contract_id", "input": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC", "match": true, "description": "canonical C address" },
+    { "pattern": "contract_id", "input": "CELZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC", "match": false, "description": "second character E is outside A-D" },
+    { "pattern": "contract_id", "input": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC\n", "match": false, "description": "trailing LF" },
+    { "pattern": "contract_id", "input": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI", "match": false, "description": "G address does not match contract_id" },
+
+    { "pattern": "routing_id_canonical", "input": "0", "match": true, "description": "zero" },
+    { "pattern": "routing_id_canonical", "input": "1", "match": true, "description": "one" },
+    { "pattern": "routing_id_canonical", "input": "9007199254740993", "match": true, "description": "2^53+1 canary" },
+    { "pattern": "routing_id_canonical", "input": "18446744073709551615", "match": true, "description": "uint64 max (20 digits)" },
+    { "pattern": "routing_id_canonical", "input": "18446744073709551616", "match": true, "description": "uint64 max + 1 still matches the shape; the numeric bound check rejects it" },
+    { "pattern": "routing_id_canonical", "input": "100000000000000000000", "match": false, "description": "21 digits" },
+    { "pattern": "routing_id_canonical", "input": "00", "match": false, "description": "non-canonical zero" },
+    { "pattern": "routing_id_canonical", "input": "0123", "match": false, "description": "leading zero" },
+    { "pattern": "routing_id_canonical", "input": "-1", "match": false, "description": "negative sign" },
+    { "pattern": "routing_id_canonical", "input": "+1", "match": false, "description": "positive sign" },
+    { "pattern": "routing_id_canonical", "input": "1e3", "match": false, "description": "exponent notation" },
+    { "pattern": "routing_id_canonical", "input": "1.0", "match": false, "description": "decimal point" },
+    { "pattern": "routing_id_canonical", "input": "123\n", "match": false, "description": "trailing LF" },
+    { "pattern": "routing_id_canonical", "input": "١٢٣", "match": false, "description": "Arabic-Indic digits (\\d would match these in some engines)" },
+    { "pattern": "routing_id_canonical", "input": "１２３", "match": false, "description": "fullwidth digits (U+FF11..U+FF13)" },
+    { "pattern": "routing_id_canonical", "input": "", "match": false, "description": "empty string" },
+
+    { "pattern": "memo_numeric", "input": "123", "match": true, "description": "plain digits" },
+    { "pattern": "memo_numeric", "input": "00123", "match": true, "description": "leading zeros are accepted (and normalized with a warning)" },
+    { "pattern": "memo_numeric", "input": "0000000000000000000000000001", "match": true, "description": "exactly 28 bytes" },
+    { "pattern": "memo_numeric", "input": "00000000000000000000000000001", "match": false, "description": "29 bytes exceeds MEMO_TEXT limit" },
+    { "pattern": "memo_numeric", "input": " 123", "match": false, "description": "leading space" },
+    { "pattern": "memo_numeric", "input": "123 ", "match": false, "description": "trailing space" },
+    { "pattern": "memo_numeric", "input": "123\n", "match": false, "description": "trailing LF" },
+    { "pattern": "memo_numeric", "input": "1 23", "match": false, "description": "interior space" },
+    { "pattern": "memo_numeric", "input": "\t123", "match": false, "description": "leading tab" },
+    { "pattern": "memo_numeric", "input": "١٢٣", "match": false, "description": "Arabic-Indic digits" },
+    { "pattern": "memo_numeric", "input": "", "match": false, "description": "empty string" },
+    { "pattern": "memo_numeric", "input": " ", "match": false, "description": "single space" }
+  ]
+}

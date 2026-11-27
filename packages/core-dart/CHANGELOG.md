@@ -9,6 +9,98 @@ Releases are coordinated with `spec/vectors.json` `spec_version`: see
 
 ## [Unreleased]
 
+### Added
+
+- `isBlankMemoText` and `effectiveMemoType`, the shared rule for empty memos.
+
+- `RoutingWarning.fromJson`, plus `DestinationError.toJson` / `fromJson` and
+  value equality, so every part of a `RoutingResult` round-trips on its own
+  (#228).
+
+- `WarningCode.values`, `WarningCode.isKnown` and `WarningCode.tryParse` for
+  validating codes off the wire, plus the `MISSING_REQUIRED_MEMO` constant
+  that `extractRouting` already emitted but `WarningCode` never declared
+  (#76).
+- `RoutingWarning.context` and `WarningContext.toJson`, wired through
+  `RoutingResult.toJson` / `fromJson`. `INVALID_DESTINATION` and
+  `UNSUPPORTED_MEMO_TYPE` require a `context` in `spec/schema.json`, so
+  warnings carrying those codes could not previously be validated against the
+  spec. `WarningContext` is now `const` with value equality so warnings
+  round-trip.
+- `WarningSeverity.tryParse`.
+- A cross-language parity test (`test/warning_code_parity_test.dart`) that
+  reads `spec/schema.json` and asserts `WarningCode.values` matches it.
+- `test/strkey_test.dart`, covering the detailed Base32 diagnostics below
+  (#72).
+
+### Changed
+
+- A MEMO_TEXT that is null, `""` or only ASCII whitespace (space, tab, LF,
+  CR) is now treated as no memo by `extractRouting`, for G and M
+  destinations alike. It previously emitted
+  `MEMO_TEXT_UNROUTABLE` (even for `''`) and `MEMO_IGNORED_FOR_MUXED`.
+  Normative cases: `spec/vectors/empty-memos.json`.
+
+### Fixed
+
+- `RoutingResult.fromJson` accepts any `Map` with string keys. Hive returns
+  `Map<dynamic, dynamic>` for stored maps, and the nested `is Map<String,
+  dynamic>` checks silently dropped every warning and the `destinationError`
+  from such input (#228).
+- `RoutingResult` equality now compares the `destinationError` message, not
+  only its code.
+- The library compiles again: `extractRouting` (the synchronous entry point)
+  had been dropped in a merge while `extractRoutingAsync` still called it.
+
+- **Breaking for consumers matching on warning codes:** a `hash`/`return` memo
+  and an unrecognized memo type now emit `UNSUPPORTED_MEMO_TYPE` with
+  `context.memoType`, matching core-go and core-ts and the spec (#76).
+- `RoutingWarning.memoIgnored` carried the ad-hoc code `'memo-ignored'`, which
+  is not in the spec. It is now `MEMO_IGNORED_FOR_MUXED`, and the message
+  matches core-ts and core-go. `RoutingWarning.contractSender` and
+  `missingRequiredMemo` reference `WarningCode` instead of hard-coded strings
+  (#76).
+- **Breaking:** `WarningSeverity` was declared three times — as a string
+  constant class in `address/codes.dart`, again in `routing/severity.dart`,
+  and as an enum in `routing/routing_result.dart`. The duplicate exports were
+  a compile error and the enum made `WarningSeverity.info` an enum value where
+  a `String` was required. Kept the single string-constant declaration, which
+  matches core-ts's `"info" | "warn" | "error"` union and core-go's bare
+  `string` (#76).
+- The package did not compile: `extract.dart` called an undefined
+  `_filterBySeverity`, `uri.dart` typed `minSeverityLevel` as the removed
+  enum, and `bluewhale_core.dart` exported two libraries twice while never
+  exporting `routing/uri.dart` (so `extractRoutingFromUriString` was
+  unreachable despite `test/uri_test.dart` using it).
+- `StrKeyUtil.decodeBase32` ignored unused bits in the final Base32 group, so
+  one muxed payload had many valid string encodings. It now round-trips the
+  decoded bytes and rejects a mismatch, as core-go and core-ts already did.
+- `extractRoutingFromUriString` could never report
+  `UriRoutingErrorCode.invalidEncoding` for a bad percent-escape, because
+  `Uri.parse` normalizes `%zz` to `%25zz` before the query is read. Escapes are
+  now validated against the raw string, so a malformed `memo` is rejected
+  instead of silently half-decoded.
+- `StrKeyUtil.decodeBase32` reported `Invalid Base32 character: !` with no
+  position. The message now names the character, its code point and its index,
+  and `FormatException.source` / `offset` are populated so tooling can point
+  at the character. A character above U+FFFF is reported as a whole code point
+  rather than a lone surrogate (#72).
+- `dart analyze` is now clean across the package: `avoid_dynamic_calls` was
+  added to `analysis_options.yaml` along with the missing community rules, and
+  every finding was fixed (#71).
+
+## [1.3.0] - 2026-11-21
+
+### Added
+
+- SEP-0029 routing vectors (`extract_routing`) for a no-memo G-address, a C-address
+  rejected with a MEMO_ID, and a hash memo that emits `UNSUPPORTED_MEMO_TYPE`.
+- Negative `muxed_decode` vectors for non-canonical base32 padding.
+
+### Changed
+
+- `spec_version` is 1.3.0.
+
 ## [1.2.0] - 2026-09-24
 
 Implements spec `1.2.0`.

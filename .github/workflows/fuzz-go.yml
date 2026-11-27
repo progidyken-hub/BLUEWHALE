@@ -20,8 +20,8 @@ jobs:
       matrix:
         target: [FuzzParse, FuzzDetect]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: packages/core-go/go.mod
       - name: Run ${{ matrix.target }}
@@ -29,7 +29,22 @@ jobs:
         run: go test ./address -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime "${{ inputs.fuzztime || '5m' }}"
       - name: Upload failing inputs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-findings-${{ matrix.target }}
           path: packages/core-go/address/testdata/fuzz/
+      - name: Notify Slack / Discord on Failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg text "🚨 *Nightly Go Fuzzing Failure* in \`${{ github.repository }}\` (target: \`${{ matrix.target }}\`, ref: \`${{ github.ref_name }}\`) — <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>" \
+            '{text: $text, content: $text}')
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL" || true
+          fi
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$DISCORD_WEBHOOK_URL" || true
+          fi

@@ -38,3 +38,21 @@ type Warning = {
 - `MEMO_TYPE_MISMATCH`
 - `NON_ROUTABLE_MEMO`
 - `JS_PRECISION_LOSS`
+
+## getMuxedSubaccountId
+
+Extracts the 64-bit subaccount ID from a valid Med25519 (M-address) strkey.
+
+```typescript
+function getMuxedSubaccountId(address: string): bigint;
+```
+
+Returns the subaccount ID encoded in the M-address as a `bigint`. Throws
+`InvalidArgumentError` if the input is a standard G-address or a C-address
+(i.e. not a Med25519 address).
+
+```typescript
+import { getMuxedSubaccountId } from '@stellar/kit';
+
+const id = getMuxedSubaccountId('M...'); // bigint
+```

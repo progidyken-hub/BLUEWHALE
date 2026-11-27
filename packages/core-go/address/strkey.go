@@ -1,6 +1,7 @@
 package address
 
 import (
+	"crypto/subtle"
 	"encoding/base32"
 	"strings"
 )
@@ -36,14 +37,12 @@ var (
 const stackBufLen = 128
 
 // DecodeStrKey decodes a strkey address and returns version byte and payload.
+// It is case-insensitive; Parse is the entry point that reports case
+// normalization via WarnNonCanonicalAddress.
 func DecodeStrKey(address string) (versionByte byte, payload []byte, err error) {
-	if address == "" {
-		return 0, nil, ErrInvalidLengthError
-	}
-
-	// Convert to uppercase for base32 decoding. DecodeStrKey only validates;
-	// Parse reports case normalization via WarnNonCanonicalAddress.
-	address = strings.ToUpper(address)
+	versionByte, payload, _, err = decodeStrKey(address)
+	return versionByte, payload, err
+}
 
 	v, p, _, err := decodeStrKey(address)
 	return v, p, err
@@ -103,7 +102,8 @@ func decodeStrKey(address string) (versionByte byte, payload []byte, canonical s
 	}
 
 	crc := CalculateCRC16(decoded[:n-2])
-	if decoded[n-2] != byte(crc) || decoded[n-1] != byte(crc>>8) {
+	expectedChecksum := [2]byte{byte(crc), byte(crc >> 8)}
+	if subtle.ConstantTimeCompare(decoded[n-2:], expectedChecksum[:]) != 1 {
 		return 0, nil, "", errInvalidChecksum
 	}
 

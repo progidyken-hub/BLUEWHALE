@@ -14,21 +14,37 @@ const (
 	ErrFederationAddressNotSupported ErrorCode = "FEDERATION_ADDRESS_NOT_SUPPORTED"
 )
 
-// RoutingError is the main custom error type
+// RoutingError is the main custom error type. Its JSON fields (`code`,
+// `input`, `message`) match core-ts (`AddressParseError.toJSON()`) and
+// core-dart (`AddressError.toJson()`) byte-for-byte.
 type RoutingError struct {
-	Code    ErrorCode
-	Input   string
-	Message string
+	Code    ErrorCode `json:"code"`
+	Input   string    `json:"input"`
+	Message string    `json:"message"`
 }
 
 func (e RoutingError) Error() string {
 	return e.Message
 }
 
-// Is allows errors.Is to match by Code
+// ErrorCode returns the error's code as a plain string. It is what the
+// package-level sentinels in core-go match on, so errors.Is works across
+// packages without them importing each other.
+func (e RoutingError) ErrorCode() string {
+	return string(e.Code)
+}
+
+// Is allows errors.Is to match by Code. The target may be a RoutingError, a
+// *RoutingError, or any error exposing the same code through ErrorCode()
+// (such as corego.ErrInvalidChecksum).
 func (e RoutingError) Is(target error) bool {
-	if targetErr, ok := target.(RoutingError); ok {
-		return e.Code == targetErr.Code
+	switch t := target.(type) {
+	case RoutingError:
+		return e.Code == t.Code
+	case *RoutingError:
+		return t != nil && e.Code == t.Code
+	case interface{ ErrorCode() string }:
+		return string(e.Code) == t.ErrorCode()
 	}
 	return false
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import '../address/codes.dart';
 import 'safe_routing_id.dart';
 
@@ -120,3 +122,24 @@ NormalizeResult normalizeMemoTextId(String s) {
 
   return NormalizeResult(normalized: normalized, warnings: warnings);
 }
+
+/// ASCII whitespace per spec/README.md rule 5: space, tab, LF, CR.
+final RegExp _asciiWhitespaceOnly = RegExp(r'^[ \t\n\r]*$');
+
+/// Whether a MEMO_TEXT value carries no content: `null`, `''`, or only ASCII
+/// whitespace (space, tab, LF, CR).
+///
+/// Non-ASCII whitespace such as U+00A0 is content, not blank, so it is still
+/// reported as an unroutable MEMO_TEXT. Shared with core-ts
+/// (`isBlankMemoText`) and core-go (`routing.IsBlankMemoText`).
+bool isBlankMemoText(String? value) =>
+    value == null || _asciiWhitespaceOnly.hasMatch(value);
+
+/// Resolves the memo type routing actually acts on. A blank MEMO_TEXT (see
+/// [isBlankMemoText]) is the same as no memo, so it resolves to `'none'`: no
+/// routing ID and no memo warnings, for G and M destinations alike. Every
+/// other memo type is returned unchanged.
+///
+/// Normative cases live in spec/vectors/empty-memos.json.
+String effectiveMemoType(String memoType, String? memoValue) =>
+    memoType == 'text' && isBlankMemoText(memoValue) ? 'none' : memoType;

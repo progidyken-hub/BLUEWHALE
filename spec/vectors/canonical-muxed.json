@@ -1,0 +1,78 @@
+[
+  {
+    "description": "canonical M-address for id=0",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD672"
+    },
+    "expected": {
+      "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+      "id": "0"
+    }
+  },
+  {
+    "description": "id=0 with the unused trailing bit set: same bytes, not canonical",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAD673"
+    },
+    "expected": {
+      "error": "unused bits in base32 encoding must be zero"
+    }
+  },
+  {
+    "description": "canonical M-address for id=1",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAHOO2"
+    },
+    "expected": {
+      "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+      "id": "1"
+    }
+  },
+  {
+    "description": "id=1 with the unused trailing bit set: same bytes, not canonical",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACAAAAAAAAAAAAHOO3"
+    },
+    "expected": {
+      "error": "unused bits in base32 encoding must be zero"
+    }
+  },
+  {
+    "description": "canonical M-address for id=9007199254740992",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACABAAAAAAAAAAAFZG"
+    },
+    "expected": {
+      "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+      "id": "9007199254740992"
+    }
+  },
+  {
+    "description": "id=9007199254740992 with the unused trailing bit set: same bytes, not canonical",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQACABAAAAAAAAAAAFZH"
+    },
+    "expected": {
+      "error": "unused bits in base32 encoding must be zero"
+    }
+  },
+  {
+    "description": "canonical M-address for id=18446744073709551615",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD7777777777774OFW"
+    },
+    "expected": {
+      "base_g": "GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI",
+      "id": "18446744073709551615"
+    }
+  },
+  {
+    "description": "id=18446744073709551615 with the unused trailing bit set: same bytes, not canonical",
+    "input": {
+      "mAddress": "MAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQAD7777777777774OFX"
+    },
+    "expected": {
+      "error": "unused bits in base32 encoding must be zero"
+    }
+  }
+]

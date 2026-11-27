@@ -30,6 +30,17 @@ if (exists(publishedVectors)) {
   }
 }
 
+// 1b. spec/version.json mirrors the normative spec version (#392).
+const versionFile = path.join("spec", "version.json");
+if (!exists(versionFile)) {
+  errors.push(`${versionFile}: missing`);
+} else {
+  const recorded = JSON.parse(read(versionFile)).spec_version;
+  if (recorded !== specVersion) {
+    errors.push(`${versionFile}: spec_version ${recorded}, expected ${specVersion}`);
+  }
+}
+
 // 2. Package manifests are versioned in lockstep with the spec.
 const manifests = [
   { file: path.join("packages", "spec", "package.json"), version: (s) => JSON.parse(s).version },

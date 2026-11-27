@@ -1,4 +1,5 @@
 import '../address/codes.dart' as codes;
+import '../address/codes.dart' show WarningContext;
 import '../address/parse.dart';
 import '../muxed/decode.dart';
 import 'routing_result.dart';
@@ -24,25 +25,49 @@ import 'severity.dart';
 /// [RoutingResult.safeId] accessors, MEMO_IDs and muxed IDs up to the
 /// uint64 ceiling survive Flutter Web without truncation.
 ///
-/// This is the synchronous variant for pure string parsing.
-/// For future compatibility with async network checks (Federation, SEP-0029),
-/// use [extractRouting] instead.
+/// Deprecated synchronous alias of [extractRouting]. For async network checks
+/// (Federation, SEP-0029), use [extractRoutingAsync].
 ///
 /// Warnings below [RoutingInput.minSeverityLevel] are filtered out using the
 /// shared severity ordering (info = 0, warn = 1, error = 2).
 RoutingResult extractRoutingSync(RoutingInput input) {
-  final result = _extractRoutingUnfiltered(input);
-  if (severityWeight(input.minSeverityLevel) == 0) return result;
+  return _filterResultBySeverity(_extractRoutingUnfiltered(input), input.minSeverityLevel);
+}
+
+/// Extracts deposit routing synchronously (pure string parsing).
+///
+/// For async network checks (Federation, SEP-0029) use [extractRoutingAsync].
+RoutingResult extractRouting(RoutingInput input) => extractRoutingSync(input);
+
+/// Re-applies [RoutingInput.minSeverityLevel] to an already-built result.
+///
+/// Returns [result] unchanged when the threshold is `info` (or unrecognized),
+/// which is the common path and avoids re-allocating the warning list.
+RoutingResult _filterResultBySeverity(RoutingResult result, String? minSeverityLevel) {
+  if (severityWeight(minSeverityLevel) == 0) return result;
   return RoutingResult(
     source: result.source,
     id: result.id,
     destinationBaseAccount: result.destinationBaseAccount,
     destinationError: result.destinationError,
-    warnings: filterBySeverity(result.warnings, input.minSeverityLevel),
+    warnings: filterBySeverity(result.warnings, minSeverityLevel),
   );
 }
 
 RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
+  // A blank MEMO_TEXT ('', whitespace-only or null) is treated exactly like
+  // no memo in every SDK (spec/vectors/empty-memos.json).
+  final memoType = effectiveMemoType(input.memoType, input.memoValue);
+  if (memoType != input.memoType) {
+    input = RoutingInput(
+      destination: input.destination,
+      memoType: memoType,
+      memoValue: input.memoValue,
+      sourceAccount: input.sourceAccount,
+      minSeverityLevel: input.minSeverityLevel,
+    );
+  }
+
   final trimmed = input.destination.trim();
 
   // Empty destination → return structured destinationError (zero-throw policy).
@@ -173,6 +198,7 @@ RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
           code: codes.WarningCode.unsupportedMemoType,
           severity: codes.WarningSeverity.warn,
           message: 'Memo type ${input.memoType} is not supported for routing.',
+          context: WarningContext(memoType: input.memoType),
         ),
       );
     } else {
@@ -181,6 +207,7 @@ RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
           code: codes.WarningCode.unsupportedMemoType,
           severity: codes.WarningSeverity.warn,
           message: 'Unrecognized memo type: unknown',
+          context: WarningContext(memoType: 'unknown'),
         ),
       );
     }
@@ -244,6 +271,7 @@ RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
         code: codes.WarningCode.unsupportedMemoType,
         severity: codes.WarningSeverity.warn,
         message: 'Memo type ${input.memoType} is not supported for routing.',
+        context: WarningContext(memoType: input.memoType),
       ),
     );
   } else if (input.memoType != 'none') {
@@ -252,6 +280,7 @@ RoutingResult _extractRoutingUnfiltered(RoutingInput input) {
         code: codes.WarningCode.unsupportedMemoType,
         severity: codes.WarningSeverity.warn,
         message: 'Unrecognized memo type: unknown',
+        context: WarningContext(memoType: 'unknown'),
       ),
     );
   }
@@ -273,14 +302,14 @@ typedef MemoRequirementFetcher = Future<bool> Function(String baseAccount);
 /// Extracts deposit routing information, optionally checking the
 /// destination's SEP-0029 memo requirement.
 ///
-/// Runs [extractRoutingSync] first. If [fetchMemoRequirement] is given and
+/// Runs [extractRouting] first. If [fetchMemoRequirement] is given and
 /// the result has a destination account but no routing ID, the fetcher is
 /// called; when it returns `true`, [RoutingWarning.missingRequiredMemo] is
 /// appended. Fetch failures fail open: the synchronous result is returned
 /// unchanged.
 ///
 /// ```dart
-/// final result = await extractRouting(
+/// final result = await extractRoutingAsync(
 ///   RoutingInput(
 ///     destination: 'GAYCUYT553C5LHVE2XPW5GMEJT4BXGM7AHMJWLAPZP53KJO7EIQADRSI',
 ///     memoType: 'none',
@@ -291,11 +320,11 @@ typedef MemoRequirementFetcher = Future<bool> Function(String baseAccount);
 ///   // Hold the deposit for manual review.
 /// }
 /// ```
-Future<RoutingResult> extractRouting(
+Future<RoutingResult> extractRoutingAsync(
   RoutingInput input, {
   MemoRequirementFetcher? fetchMemoRequirement,
 }) async {
-  final result = extractRoutingSync(input);
+  final result = extractRouting(input);
   if (fetchMemoRequirement == null ||
       result.destinationBaseAccount == null ||
       result.id != null ||
@@ -312,10 +341,30 @@ Future<RoutingResult> extractRouting(
         destinationError: result.destinationError,
         warnings: [...result.warnings, RoutingWarning.missingRequiredMemo],
       );
-      return _filterBySeverity(withMemoWarning, input.minSeverityLevel);
+      return _filterResultBySeverity(withMemoWarning, input.minSeverityLevel);
     }
   } catch (_) {
     // Network/configuration failures must not change the synchronous result.
   }
   return result;
 }
+
+/// Looks up whether [baseAccount] requires a memo over HTTP by querying Horizon account data (SEP-0029).
+/// Issue #61
+Future<bool> httpFetchMemoRequirement(
+  String baseAccount, {
+  String horizonUrl = 'https://horizon.stellar.org',
+  dynamic httpClient,
+}) async {
+  try {
+    final sanitizedUrl = horizonUrl.replaceAll(RegExp(r'/+$'), '');
+    final uri = Uri.parse('$sanitizedUrl/accounts/$baseAccount');
+    if (httpClient != null) {
+      final res = await httpClient.get(uri);
+      final body = res?.body?.toString() ?? '';
+      return body.contains('config.memo_required') || body.contains('config.requiring_memo');
+    }
+  } catch (_) {}
+  return false;
+}
+

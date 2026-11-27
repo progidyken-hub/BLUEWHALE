@@ -18,22 +18,26 @@
 /// ## Public API
 ///
 /// - **Addresses:** [detect], [validate], [parse], [StellarAddress],
-///   [AddressKind], [ParseResult], [AddressError].
+///   [AddressKind], [ParseResult], [AddressError], [decodeStrKey],
+///   [StrKeyDecodeResult].
 /// - **Muxed accounts:** [MuxedAddress], [DecodedMuxedAddress], and the
 ///   low-level [MuxedEncoder] / [MuxedDecoder].
-/// - **Routing:** [extractRouting], [extractRoutingSync], [RoutingInput],
+/// - **Routing:** [extractRouting], [extractRoutingAsync], [extractRoutingSync], [RoutingInput],
 ///   [RoutingResult], [RoutingSource], [RoutingWarning], [DestinationError],
-///   [SafeRoutingId], [normalizeMemoId], [normalizeMemoTextId].
+///   [SafeRoutingId], [normalizeMemoId], [normalizeMemoTextId],
+///   [extractRoutingFromUriString], [UriRoutingResult].
 /// - **Codes:** [ErrorCode], [WarningCode], [WarningSeverity], [Warning].
 /// - **Exceptions:** [StellarAddressException], [ExtractRoutingException].
 /// - **Platform:** [isWebJsRuntime].
-library bluewhale_core;
+library;
 
 // Addresses
 export 'src/address/codes.dart';
 export 'src/address/detect.dart';
+export 'src/address/contract.dart';
 export 'src/address/parse.dart';
 export 'src/address/stellar_address.dart';
+export 'src/address/strkey_decode.dart';
 export 'src/address/validate.dart';
 
 // Muxed accounts
@@ -47,10 +51,11 @@ export 'src/muxed/muxed_address.dart';
 export 'src/routing/extract.dart';
 export 'src/routing/memo.dart' hide uint64Max, digitsOnly;
 export 'src/routing/routing_result.dart';
+export 'src/routing/deposit_destination.dart';
 export 'src/routing/safe_routing_id.dart';
 export 'src/routing/severity.dart';
-export 'src/util/web_platform.dart';
-export 'src/muxed/muxed_address.dart';
+export 'src/routing/tx.dart';
+export 'src/routing/uri.dart';
 export 'src/exceptions.dart';
 
 // Platform
