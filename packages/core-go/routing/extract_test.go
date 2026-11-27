@@ -299,6 +299,7 @@ func TestExtractRouting_RoutingMatrix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assertRoutingResult(t, ExtractRouting(tt.input), tt.expected)
 		})
 	}

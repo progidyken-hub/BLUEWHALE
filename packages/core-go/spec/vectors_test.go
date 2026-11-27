@@ -95,6 +95,10 @@ func TestVectors(t *testing.T) {
 		name := vectorTestName(i, tc)
 
 		t.Run(name, func(t *testing.T) {
+			// Each vector is independent; running them in parallel
+			// distributes work across available CPU cores and significantly
+			// reduces total test time for large vector suites.
+			t.Parallel()
 			t.Logf("vector=%s", name)
 
 			switch tc.Module {

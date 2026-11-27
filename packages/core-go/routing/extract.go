@@ -251,9 +251,6 @@ func ExtractRoutingWithMemoRequirement(input RoutingInput, fetch MemoRequirement
 		return ExtractRoutingWithContext(context.Background(), input, nil)
 	}
 	// Wrap the legacy fetcher so it satisfies ContextMemoRequirementFetcher.
-	// The context is intentionally not forwarded to the wrapped function
-	// (it has no context parameter), but callers can migrate to
-	// ExtractRoutingWithContext when they are ready.
 	return ExtractRoutingWithContext(context.Background(), input, func(_ context.Context, baseAccount string) (bool, error) {
 		return fetch(baseAccount)
 	})

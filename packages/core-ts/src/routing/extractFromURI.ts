@@ -10,6 +10,7 @@
 
 import { extractRouting } from "./extract";
 import type { RoutingInput, RoutingResult } from "./types";
+import { internAssetString } from "../intern";
 
 export interface SEP7PayParams {
   destination: string;
@@ -199,6 +200,18 @@ export function extractRoutingFromURI(uriString: string): ExtractRoutingFromURIR
   // 6. Extract optional parameters with safe decoding
   const rawParams: SEP7PayParams = {
     destination: safelyDecode(destination.trim()),
+    amount: safelyDecode(params.get("amount")),
+    // Intern asset codes and issuer addresses: these short strings repeat
+    // heavily in payment streams and sharing references reduces GC pressure.
+    assetCode: internAssetString(safelyDecode(params.get("asset_code")) ?? "") || undefined,
+    assetIssuer: internAssetString(safelyDecode(params.get("asset_issuer")) ?? "") || undefined,
+    memo: safelyDecode(params.get("memo")),
+    memoType: safelyDecode(params.get("memo_type")),
+    callback: safelyDecode(params.get("callback")),
+    msg: safelyDecode(params.get("msg")),
+    networkPassphrase: safelyDecode(params.get("network_passphrase")),
+    originDomain: safelyDecode(params.get("origin_domain")),
+    signature: safelyDecode(params.get("signature")),
     amount: safelyDecode(params.amount ?? null),
     assetCode: safelyDecode(params.asset_code ?? null),
     assetIssuer: safelyDecode(params.asset_issuer ?? null),
