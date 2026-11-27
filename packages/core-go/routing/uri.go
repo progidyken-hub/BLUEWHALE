@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+
+	"github.com/REDISHFISH/BLUEWHALE/packages/core-go/intern"
 )
 
 // URIParams represents parsed SEP-0007 parameters.
@@ -77,10 +79,13 @@ func ExtractRoutingFromURI(uriStr string) (RoutingResult, URIParams, error) {
 	}
 
 	params := URIParams{
-		Destination:       destination,
-		Amount:            values.Get("amount"),
-		AssetCode:         values.Get("asset_code"),
-		AssetIssuer:       values.Get("asset_issuer"),
+		Destination: destination,
+		Amount:      values.Get("amount"),
+		// Intern asset codes and issuer addresses: these short strings repeat
+		// heavily across payment operations and sharing references reduces GC
+		// scanning pressure and allocation count.
+		AssetCode:         intern.InternAssetString(values.Get("asset_code")),
+		AssetIssuer:       intern.InternAssetString(values.Get("asset_issuer")),
 		Memo:              values.Get("memo"),
 		MemoType:          values.Get("memo_type"),
 		Callback:          values.Get("callback"),
