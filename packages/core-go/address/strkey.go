@@ -45,6 +45,10 @@ func DecodeStrKey(address string) (versionByte byte, payload []byte, err error) 
 	// Parse reports case normalization via WarnNonCanonicalAddress.
 	address = strings.ToUpper(address)
 
+	v, p, _, err := decodeStrKey(address)
+	return v, p, err
+}
+
 // decodeStrKey is DecodeStrKey that also returns the canonical (uppercase)
 // form of address. canonical aliases address when it is already uppercase.
 func decodeStrKey(address string) (versionByte byte, payload []byte, canonical string, err error) {

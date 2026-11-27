@@ -208,16 +208,15 @@ func extractRouting(input RoutingInput) RoutingResult {
 // cancellation and deadline propagation.
 type MemoRequirementFetcher func(baseAccount string) (bool, error)
 
-// ExtractRoutingWithMemoRequirement performs normal routing extraction and
-// optionally adds the SEP-0029 error when a classic destination requires a
-// memo but no routing ID was supplied. Fetch failures fail open so callers
-// retain the result of the synchronous parser.
-//
-// The ctx parameter is accepted for API consistency with context-aware
-// call chains (e.g. future fetcher implementations backed by Horizon or an
-// indexer); the current implementation performs no cancellable work and
-// does not use it.
-func ExtractRoutingWithMemoRequirement(ctx context.Context, input RoutingInput, fetch MemoRequirementFetcher) RoutingResult {
+// ContextMemoRequirementFetcher is the context-aware variant of
+// [MemoRequirementFetcher]. Prefer this type for new code.
+type ContextMemoRequirementFetcher func(ctx context.Context, baseAccount string) (bool, error)
+
+// ExtractRoutingWithContext performs normal routing extraction and optionally
+// adds the SEP-0029 error when a classic destination requires a memo but no
+// routing ID was supplied. Fetch failures fail open so callers retain the
+// result of the synchronous parser.
+func ExtractRoutingWithContext(ctx context.Context, input RoutingInput, fetch ContextMemoRequirementFetcher) RoutingResult {
 	result := ExtractRouting(input)
 	if fetch == nil || result.DestinationBaseAccount == "" || result.RoutingID != nil || result.DestinationError != nil {
 		return result
@@ -245,9 +244,6 @@ func ExtractRoutingWithMemoRequirement(input RoutingInput, fetch MemoRequirement
 		return ExtractRoutingWithContext(context.Background(), input, nil)
 	}
 	// Wrap the legacy fetcher so it satisfies ContextMemoRequirementFetcher.
-	// The context is intentionally not forwarded to the wrapped function
-	// (it has no context parameter), but callers can migrate to
-	// ExtractRoutingWithContext when they are ready.
 	return ExtractRoutingWithContext(context.Background(), input, func(_ context.Context, baseAccount string) (bool, error) {
 		return fetch(baseAccount)
 	})
