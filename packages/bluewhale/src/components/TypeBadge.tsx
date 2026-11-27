@@ -73,8 +73,16 @@ interface TypeBadgeProps {
   style?: CSSProperties;
 }
 
+const ADDRESS_TYPE_TITLES: Record<Exclude<AddressType, 'UNKNOWN'>, string> = {
+  G: 'G-address (Ed25519 public key)',
+  M: 'M-address (Muxed account / SEP-23)',
+  C: 'C-address (Smart contract)',
+};
+
 export const TypeBadge: React.FC<TypeBadgeProps> = ({ type, className, style }) => {
   if (type === 'UNKNOWN') return null;
+
+  const title = ADDRESS_TYPE_TITLES[type];
 
   let backgroundColor = '#e2e8f0'; // default gray
   let color = '#1e293b';

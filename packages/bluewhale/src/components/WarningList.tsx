@@ -1,7 +1,15 @@
 import React, { CSSProperties } from 'react';
 
+/** A single warning message string. */
+export type WarningItem = string;
+
+const containerStyle = {
+  backgroundColor: '#fffbeb',
+  borderColor: '#fcd34d',
+};
+
 interface WarningListProps {
-  warnings: string[];
+  warnings: WarningItem[];
   /** Additional CSS class names merged onto the root element. */
   className?: string;
   /** Inline styles applied to the root element. */

@@ -1,7 +1,75 @@
-import React, { useState, useMemo, useEffect, useCallback, CSSProperties } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, CSSProperties, useRef } from 'react';
 import { TypeBadge, AddressType } from './components/TypeBadge';
 import { WarningList, WarningItem } from './components/WarningList';
 import { MemoField } from './components/MemoField';
+
+// ─── SEP-0007 helpers ──────────────────────────────────────────────────────────
+
+const SEP7_SCHEME = 'web+stellar:';
+
+function isSep7URI(input: string): boolean {
+  return input.trim().toLowerCase().startsWith(SEP7_SCHEME);
+}
+
+type Sep7ParseResult =
+  | {
+      success: true;
+      destination: string;
+      memo: string | null;
+      warnings: string[];
+    }
+  | {
+      success: false;
+      error: string;
+    };
+
+function parseSep7URI(uriString: string): Sep7ParseResult {
+  if (!uriString.startsWith(SEP7_SCHEME)) {
+    return { success: false, error: "URI must use 'web+stellar:' scheme" };
+  }
+  const withoutScheme = uriString.slice(SEP7_SCHEME.length);
+  const questionIndex = withoutScheme.indexOf('?');
+  const operation = questionIndex === -1 ? withoutScheme : withoutScheme.slice(0, questionIndex);
+  const queryString = questionIndex === -1 ? '' : withoutScheme.slice(questionIndex + 1);
+
+  if (operation !== 'pay') {
+    return { success: false, error: `Unsupported operation: '${operation}'. Only 'pay' is supported.` };
+  }
+
+  let params: URLSearchParams;
+  try {
+    params = new URLSearchParams(queryString);
+  } catch {
+    return { success: false, error: 'Failed to parse URI query parameters' };
+  }
+
+  const destination = params.get('destination');
+  if (!destination || destination.trim() === '') {
+    return { success: false, error: "Missing required 'destination' parameter" };
+  }
+
+  return {
+    success: true,
+    destination: destination.trim(),
+    memo: params.get('memo'),
+    warnings: [],
+  };
+}
+
+// ─── Stable ID hook ────────────────────────────────────────────────────────────
+
+let _idCounter = 0;
+function useStableId(prefix: string): string {
+  const ref = useRef<string | null>(null);
+  if (ref.current === null) {
+    ref.current = `${prefix}-${++_idCounter}`;
+  }
+  return ref.current;
+}
+
+// ─── Constant empty array (stable reference) ──────────────────────────────────
+
+const EMPTY_WARNINGS: WarningItem[] = [];
 
 /**
  * A simplified routing result for the UI layer.
@@ -220,17 +288,17 @@ export const AddressInput: React.FC<AddressInputProps> = ({
 
     const trimmed = raw.trim();
     // The core parser matches the scheme case-sensitively; normalize it.
-    const result = extractRoutingFromURI(SEP7_SCHEME + trimmed.slice(SEP7_SCHEME.length));
+    const result = parseSep7URI(SEP7_SCHEME + trimmed.slice(SEP7_SCHEME.length));
     if (result.success) {
-      setAddress(result.rawParams.destination);
-      setMemo(result.rawParams.memo ?? '');
+      setAddress(result.destination);
+      setMemo(result.memo ?? '');
       setDecodedFromURI(true);
-      setUriWarnings(result.routing.warnings);
+      setUriWarnings(result.warnings);
     } else {
-      // Error text from core is already sanitized of sensitive query values.
+      // Error text is already sanitized of sensitive query values.
       setAddress(trimmed);
       setDecodedFromURI(false);
-      setUriWarnings([{ code: result.code, message: `Could not decode Stellar URI: ${result.error}`, severity: 'error' }]);
+      setUriWarnings([`Could not decode Stellar URI: ${result.error}`]);
     }
   };
 
