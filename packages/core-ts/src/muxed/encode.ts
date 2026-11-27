@@ -29,9 +29,14 @@ export function encodeMuxed(baseG: string, id: bigint): string {
   }
 
   // Build the 40-byte med25519 payload: [pubkey (32 bytes)] [uint64 id (8 bytes, BE)].
-  const pubkeyBytes = Buffer.from(StrKey.decodeEd25519PublicKey(baseG));
-  const idBytes = Buffer.alloc(8);
-  idBytes.writeBigUInt64BE(id);
+  // decodeEd25519PublicKey already returns a Buffer (Uint8Array subclass); reuse
+  // it directly with subarray to avoid an extra heap copy.
+  const pubkeyBytes = StrKey.decodeEd25519PublicKey(baseG);
+  const payload = Buffer.allocUnsafe(40);
+  // Copy pubkey bytes without creating an intermediate Buffer.from copy.
+  payload.set(pubkeyBytes.subarray(0, 32), 0);
+  // Write the uint64 ID in big-endian directly into the payload.
+  payload.writeBigUInt64BE(id, 32);
 
-  return StrKey.encodeMed25519PublicKey(Buffer.concat([pubkeyBytes, idBytes]));
+  return StrKey.encodeMed25519PublicKey(payload);
 }
